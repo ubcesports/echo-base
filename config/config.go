@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func loadEnv(path string) {
+func LoadEnv(path string) {
 	file, err := os.Open(path)
 	if err != nil {
 		return

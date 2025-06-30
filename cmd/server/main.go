@@ -6,7 +6,14 @@ import (
 	"os"
 
 	"github.com/ubcesports/echo-base/config"
-	"github.com/ubcesports/echo-base/internal/database"
-	"github.com/ubcesports/echo-base/internal/handlers"
-	"github.com/ubcesports/echo-base/internal/middleware"
+	"github.com/ubcesports/echo-base/internal/database/db"
 )
+
+func main() {
+	config.LoadEnv(".env")
+	db.Init()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/")
+
+}
