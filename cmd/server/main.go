@@ -8,6 +8,7 @@ import (
 	"github.com/ubcesports/echo-base/config"
 	"github.com/ubcesports/echo-base/internal/database"
 	"github.com/ubcesports/echo-base/internal/handlers"
+	"github.com/ubcesports/echo-base/internal/middleware"
 )
 
 func main() {
@@ -19,8 +20,8 @@ func main() {
 
 	// Set up HTTP routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", handlers.HealthCheck)
-	mux.HandleFunc("/db/ping", handlers.DatabasePing)
+	mux.Handle("/health", middleware.AuthMiddleware(http.HandlerFunc(handlers.HealthCheck)))
+	mux.Handle("/db/ping", middleware.AuthMiddleware(http.HandlerFunc(handlers.DatabasePing)))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Echo Base API is running!"))
 	})
