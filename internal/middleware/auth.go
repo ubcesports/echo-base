@@ -10,7 +10,7 @@ import (
 )
 
 // TODO: This is just a dummy DB call, the real DB logic will live here
-func getAPIKeyRecord(hash string) (userID string, err error) {
+func getAPIKeyRecord(hash string) (appplicationID string, err error) {
 	validHash := "PUT HASHED KEY HERE"
 	if hash != validHash {
 		return "", errors.New("API key not found")
@@ -29,13 +29,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		hash := sha256.Sum256([]byte(apiKey))
 		hashHex := hex.EncodeToString(hash[:])
-		userID, err := getAPIKeyRecord(hashHex)
+		applicationID, err := getAPIKeyRecord(hashHex)
 		if err != nil {
 			http.Error(w, "Unauthorized: Invalid API Key", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "userID", userID)
+		ctx := context.WithValue(r.Context(), "userID", applicationID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
