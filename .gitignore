@@ -2,3 +2,5 @@
 .envrc
 .direnv/
 .DS_Store
+terraform/.terraform
+terraform/terraform.tfstate*
