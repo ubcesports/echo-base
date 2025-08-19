@@ -21,5 +21,5 @@ CREATE TABLE gamer_activity
 );
 
 -- +migrate Down
-DROP TABLE gamer_profile;
 DROP TABLE gamer_activity;
+DROP TABLE gamer_profile;
