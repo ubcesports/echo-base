@@ -69,12 +69,10 @@ func getAPIKeyRecord(apiKey string) (appName string, err error) {
 		return "", err
 	}
 
-	// Verify the secret against the stored hash
 	if !verifyArgon2(secret, hashedSecret) {
 		return "", sql.ErrNoRows
 	}
 
-	// Update last_used_at timestamp
 	updateQuery := `UPDATE auth SET last_used_at = NOW() WHERE key_id = $1`
 	database.DB.Exec(updateQuery, keyID)
 
