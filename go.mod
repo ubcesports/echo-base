@@ -4,8 +4,6 @@ go 1.24
 
 require github.com/lib/pq v1.10.9
 
-require github.com/golang-jwt/jwt/v5 v5.2.2
-
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect

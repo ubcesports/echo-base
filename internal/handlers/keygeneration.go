@@ -8,9 +8,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/ubcesports/echo-base/internal/database"
+)
+
+const (
+	KeyIDLength      = 8
+	SecretLength     = 32
+	APIKeyPrefix     = "api_"
+	MaxAppNameLength = 100
+)
+
+var (
+	validAppNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
 type GenerateKeyRequest struct {
@@ -35,20 +47,20 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.AppName == "" {
-		http.Error(w, "app_name is required", http.StatusBadRequest)
+	if err := validateAppName(req.AppName); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	keyIDBytes := make([]byte, 6)
+	keyIDBytes := make([]byte, KeyIDLength)
 	_, err := rand.Read(keyIDBytes)
 	if err != nil {
 		http.Error(w, "Failed to generate key ID", http.StatusInternalServerError)
 		return
 	}
-	keyID := strings.ToLower(base64.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(keyIDBytes))
+	keyID := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(keyIDBytes))
 
-	secretBytes := make([]byte, 16)
+	secretBytes := make([]byte, SecretLength)
 	_, err = rand.Read(secretBytes)
 	if err != nil {
 		http.Error(w, "Failed to generate secret", http.StatusInternalServerError)
@@ -58,8 +70,7 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request) {
 
 	hasher := sha256.New()
 	hasher.Write([]byte(secret))
-	hash := hasher.Sum(nil)
-	hashedSecret := base64.RawURLEncoding.EncodeToString(hash)
+	hashedSecret := hasher.Sum(nil)
 
 	if err := storeAPIKey(req, keyID, hashedSecret); err != nil {
 		http.Error(w, "Failed to store API Key", http.StatusInternalServerError)
@@ -76,16 +87,31 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func storeAPIKey(req GenerateKeyRequest, keyID string, hashedSecret string) error {
+func storeAPIKey(req GenerateKeyRequest, keyID string, hashedSecret []byte) error {
 	query := `
-        INSERT INTO auth (app_name, key_id, hashed_key)
+        INSERT INTO application (app_name, key_id, hashed_key)
         VALUES ($1, $2, $3)
     `
-
 	_, err := database.DB.Exec(query, req.AppName, keyID, hashedSecret)
 	if err != nil {
-		fmt.Println(err)
-		return err
+		return fmt.Errorf("database storage failed")
+
+	}
+
+	return nil
+}
+
+func validateAppName(appName string) error {
+	if appName == "" {
+		return fmt.Errorf("app_name is required")
+	}
+
+	if len(appName) > MaxAppNameLength {
+		return fmt.Errorf("app_name must be %d characters or less", MaxAppNameLength)
+	}
+
+	if !validAppNameRegex.MatchString(appName) {
+		return fmt.Errorf("app_name can only contain letters, numbers, hyphens, and underscores")
 	}
 
 	return nil

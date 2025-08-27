@@ -3,8 +3,8 @@ package middleware
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"database/sql"
-	"encoding/base64"
 	"net/http"
 	"strings"
 	"time"
@@ -12,28 +12,12 @@ import (
 	"github.com/ubcesports/echo-base/internal/database"
 )
 
-func verifySHA256(secret, hashedSecret string) bool {
-	expectedHash, err := base64.RawURLEncoding.DecodeString(hashedSecret)
-	if err != nil {
-		return false
-	}
-
-	// Create SHA256 hash without salt
+func verifySHA256(secret string, hashedSecret []byte) bool {
 	hasher := sha256.New()
 	hasher.Write([]byte(secret))
 	actualHash := hasher.Sum(nil)
 
-	if len(expectedHash) != len(actualHash) {
-		return false
-	}
-
-	verified := true
-	for i := range expectedHash {
-		if expectedHash[i] != actualHash[i] {
-			verified = false
-		}
-	}
-	return verified
+	return subtle.ConstantTimeCompare(hashedSecret, actualHash) == 1
 }
 
 func processAPIKey(apiKey string) (appName string, err error) {
@@ -49,15 +33,14 @@ func processAPIKey(apiKey string) (appName string, err error) {
 	keyID := keyParts[0]
 	secret := keyParts[1]
 
-	var hashedSecret string
+	var hashedSecret []byte
 	var lastUsed *time.Time
 
 	query := `
         SELECT app_name, hashed_key, last_used_at 
-        FROM auth 
+        FROM application 
         WHERE key_id = $1
     `
-
 	err = database.DB.QueryRow(query, keyID).Scan(&appName, &hashedSecret, &lastUsed)
 	if err != nil {
 		return "", err
@@ -67,7 +50,7 @@ func processAPIKey(apiKey string) (appName string, err error) {
 		return "", sql.ErrNoRows
 	}
 
-	updateQuery := `UPDATE auth SET last_used_at = NOW() WHERE key_id = $1`
+	updateQuery := `UPDATE application SET last_used_at = NOW() WHERE key_id = $1`
 	go func() {
 		database.DB.Exec(updateQuery, keyID)
 	}()
