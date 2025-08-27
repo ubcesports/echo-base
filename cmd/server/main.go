@@ -23,6 +23,7 @@ func main() {
 
 	mux.HandleFunc("/health", handlers.HealthCheck)
 	mux.HandleFunc("/db/ping", handlers.DatabasePing)
+	mux.HandleFunc("/admin/generate-key", handlers.GenerateAPIKey)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Echo Base API is running!"))
 	})

@@ -2,47 +2,41 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/ubcesports/echo-base/internal/database"
-	"golang.org/x/crypto/argon2"
 )
 
-func verifyArgon2(secret, hashedSecret string) bool {
-	parts := strings.Split(hashedSecret, ":")
-	if len(parts) != 2 {
-		return false
-	}
-
-	salt, err := base64.RawURLEncoding.DecodeString(parts[0])
+func verifySHA256(secret, hashedSecret string) bool {
+	expectedHash, err := base64.RawURLEncoding.DecodeString(hashedSecret)
 	if err != nil {
 		return false
 	}
 
-	expectedHash, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return false
-	}
-
-	actualHash := argon2.IDKey([]byte(secret), salt, 1, 64*1024, 4, 32)
+	// Create SHA256 hash without salt
+	hasher := sha256.New()
+	hasher.Write([]byte(secret))
+	actualHash := hasher.Sum(nil)
 
 	if len(expectedHash) != len(actualHash) {
 		return false
 	}
+
+	verified := true
 	for i := range expectedHash {
 		if expectedHash[i] != actualHash[i] {
-			return false
+			verified = false
 		}
 	}
-	return true
+	return verified
 }
 
-func getAPIKeyRecord(apiKey string) (appName string, err error) {
+func processAPIKey(apiKey string) (appName string, err error) {
 	if !strings.HasPrefix(apiKey, "api_") {
 		return "", sql.ErrNoRows
 	}
@@ -69,19 +63,20 @@ func getAPIKeyRecord(apiKey string) (appName string, err error) {
 		return "", err
 	}
 
-	if !verifyArgon2(secret, hashedSecret) {
+	if !verifySHA256(secret, hashedSecret) {
 		return "", sql.ErrNoRows
 	}
 
 	updateQuery := `UPDATE auth SET last_used_at = NOW() WHERE key_id = $1`
-	database.DB.Exec(updateQuery, keyID)
+	go func() {
+		database.DB.Exec(updateQuery, keyID)
+	}()
 
 	return appName, nil
 }
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("here")
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			http.Error(w, "Missing or invalid Authorization header", http.StatusUnauthorized)
@@ -89,7 +84,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 		apiKey := strings.TrimPrefix(authHeader, "Bearer ")
 
-		appName, err := getAPIKeyRecord(apiKey)
+		appName, err := processAPIKey(apiKey)
 		if err != nil {
 			http.Error(w, "Unauthorized: Invalid API Key", http.StatusUnauthorized)
 			return
