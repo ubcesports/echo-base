@@ -1,5 +1,4 @@
-.env
-.envrc
+.env*
 .direnv/
 .DS_Store
 terraform/.terraform
