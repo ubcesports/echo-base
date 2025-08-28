@@ -16,6 +16,17 @@ Once up, ensure your local database has up-to-date migrations by running
 run `docker volume rm echo-base_postgres-data` while the application is
 not running.
 
+### Docker Setup with Live Reload
+During development, it is possible to use the development compose configuration
+which uses [air](https://github.com/air-verse/air) to automatically watch for
+source file changes and reload the application.
+
+To use watch mode, run `docker compose -f compose.dev.yaml up` instead of the
+normal up command. When using watch mode during development, make sure to test
+the application with the full docker build script prior to merging with `main`,
+because the regular build script has various build and container optimizations 
+that are not used in watch mode.
+
 ### Manual Setup
 Create a `.env` file in `cmd/server`. Ask your directors for the specific
 values for the database connection. 
