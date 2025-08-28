@@ -1,0 +1,10 @@
+.env*
+.direnv/
+.DS_Store
+/terraform
+/migrations
+compose.yaml
+Dockerfile
+*.Dockerfile
+dbconfig.yml
+tmp/

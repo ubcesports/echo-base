@@ -32,7 +32,7 @@ func main() {
 	handler := middleware.AuthMiddleware(mux)
 
 	// Get port from environment or default to 8080
-	port := os.Getenv("PORT")
+	port := os.Getenv("EB_PORT")
 	if port == "" {
 		port = "8080"
 	}
