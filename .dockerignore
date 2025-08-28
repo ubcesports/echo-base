@@ -1,7 +1,10 @@
 .env*
 .direnv/
 .DS_Store
-terraform/
-migrations/
+/terraform
+/migrations
 compose.yaml
+Dockerfile
+*.Dockerfile
 dbconfig.yml
+tmp/

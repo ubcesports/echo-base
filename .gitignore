@@ -1,5 +1,13 @@
+# Temporary folders
+tmp/
+
+# Env
 .env*
 .direnv/
+
+# OS Metadata
 .DS_Store
-terraform/.terraform
-terraform/terraform.tfstate*
+
+# Terraform
+/terraform/.terraform
+/terraform/terraform.tfstate*
