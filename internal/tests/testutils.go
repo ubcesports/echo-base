@@ -12,7 +12,6 @@ import (
 )
 
 func SetupTestDB(t *testing.T) {
-	// Load test environment configuration
 	os.Setenv("EB_DSN", "postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable")
 
 	database.Init()
