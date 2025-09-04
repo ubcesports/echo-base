@@ -11,3 +11,6 @@ tmp/
 # Terraform
 /terraform/.terraform
 /terraform/terraform.tfstate*
+
+# Testing
+coverage*

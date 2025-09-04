@@ -4,9 +4,14 @@ development:
   dir: migrations
   table: migrations
 
+test:
+  dialect: postgres
+  datasource: postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable
+  dir: migrations
+  table: migrations
+
 production:
   dialect: postgres
   datasource: ${EB_DSN}
   dir: migrations
   table: migrations
-

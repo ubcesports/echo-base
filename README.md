@@ -35,3 +35,15 @@ To start the app, `cd` into `cmd/server` and run `go run .`.
 
 To check that the server is working, you can run a health ping through the
 `GET /health` endpoint. 
+
+### Testing
+To run the tests, you need to create a seperate test database locally. The `Makefile` in the root has all the commands needed for running the tests locally. The following steps is the main testing workflow you will likely follow during development.
+
+1. Setup test database by running `make test-db-up`.
+2. Run all testings by running `make test`.
+3. Tear down test database by running `make test-db-down`.
+4. Clean up test artifacts by running `make test-clean`. 
+
+To execute individual tests, run `go test -run <test name regex> ./...` after the test database is up. 
+
+To get test coverage, run `make test-coverage`.
