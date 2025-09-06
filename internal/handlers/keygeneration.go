@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	KeyIDLength      = 8
+	KeyIDLength      = 5
 	SecretLength     = 32
 	APIKeyPrefix     = "api_"
 	MaxAppNameLength = 100
@@ -95,7 +95,6 @@ func storeAPIKey(req GenerateKeyRequest, keyID string, hashedSecret []byte) erro
 	_, err := database.DB.Exec(query, req.AppName, keyID, hashedSecret)
 	if err != nil {
 		return fmt.Errorf("database storage failed")
-
 	}
 
 	return nil

@@ -1,0 +1,15 @@
+name: echo-base-test
+
+services:
+  postgres-test:
+    image: postgres:17
+    restart: always
+    ports:
+      - 5433:5432 
+    environment:
+      POSTGRES_DB: echobase_test 
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    tmpfs:
+      - /var/lib/postgresql/data 
+
