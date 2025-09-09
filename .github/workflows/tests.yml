@@ -1,0 +1,71 @@
+name: Test Suite
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: echobase_test
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        cache: true
+
+    - name: Install sql-migrate
+      run: go install github.com/rubenv/sql-migrate/sql-migrate@latest
+
+    - name: Wait for PostgreSQL
+      run: |
+        until pg_isready -h localhost -p 5433 -U user; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+
+    - name: Run database migrations
+      run: sql-migrate up -env=test
+      env:
+        DATABASE_URL: postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests with coverage
+      run: go test -v -race -coverprofile=coverage.out ./...
+      env:
+        EB_DSN: postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable
+
+    - name: Check test coverage threshold
+      run: |
+        go tool cover -func=coverage.out | grep total | awk '{
+          coverage = substr($3, 1, length($3)-1)
+          if (coverage < 80) {
+            print "Coverage " coverage "% is below 80% threshold"
+            exit 1
+          } else {
+            print "Coverage " coverage "% meets threshold"
+          }
+        }'
