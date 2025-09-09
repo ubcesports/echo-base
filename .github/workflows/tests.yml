@@ -18,7 +18,7 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: pass
         ports:
-          - 5433:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -40,7 +40,7 @@ jobs:
 
     - name: Wait for PostgreSQL
       run: |
-        until pg_isready -h localhost -p 5433 -U user; do
+        until pg_isready -h localhost -p 5432 -U user; do
           echo "Waiting for PostgreSQL..."
           sleep 2
         done
