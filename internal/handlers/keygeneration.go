@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	KeyIDLength      = 8
+	KeyIDLength      = 6
 	SecretLength     = 32
 	APIKeyPrefix     = "api_"
 	MaxAppNameLength = 100
@@ -35,6 +35,40 @@ type GenerateKeyResponse struct {
 	AppName string `json:"app_name"`
 }
 
+func CreateApiKey(appName string) (res GenerateKeyResponse, err error) {
+	keyIDBytes := make([]byte, KeyIDLength)
+	_, err = rand.Read(keyIDBytes)
+	if err != nil {
+		return GenerateKeyResponse{}, err
+	}
+	keyID := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(keyIDBytes))
+
+	secretBytes := make([]byte, SecretLength)
+	_, err = rand.Read(secretBytes)
+	if err != nil {
+		return GenerateKeyResponse{}, err
+	}
+	secret := base64.RawURLEncoding.EncodeToString(secretBytes)
+
+	hasher := sha256.New()
+	hasher.Write([]byte(secret))
+	hashedSecret := hasher.Sum(nil)
+
+	if err := storeAPIKey(appName, keyID, hashedSecret); err != nil {
+		return GenerateKeyResponse{}, err
+	}
+
+	fullKey := fmt.Sprintf("api_%s.%s", keyID, secret)
+
+	response := GenerateKeyResponse{
+		KeyID:   keyID,
+		APIKey:  fullKey,
+		AppName: appName,
+	}
+
+	return response, nil
+}
+
 func GenerateAPIKey(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -52,50 +86,24 @@ func GenerateAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyIDBytes := make([]byte, KeyIDLength)
-	_, err := rand.Read(keyIDBytes)
+	response, err := CreateApiKey(req.AppName)
 	if err != nil {
-		http.Error(w, "Failed to generate key ID", http.StatusInternalServerError)
-		return
-	}
-	keyID := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(keyIDBytes))
-
-	secretBytes := make([]byte, SecretLength)
-	_, err = rand.Read(secretBytes)
-	if err != nil {
-		http.Error(w, "Failed to generate secret", http.StatusInternalServerError)
-		return
-	}
-	secret := base64.RawURLEncoding.EncodeToString(secretBytes)
-
-	hasher := sha256.New()
-	hasher.Write([]byte(secret))
-	hashedSecret := hasher.Sum(nil)
-
-	if err := storeAPIKey(req, keyID, hashedSecret); err != nil {
-		http.Error(w, "Failed to store API Key", http.StatusInternalServerError)
+		http.Error(w, "Error while generating API key", http.StatusInternalServerError)
 		return
 	}
 
-	fullKey := fmt.Sprintf("api_%s.%s", keyID, secret)
-	response := GenerateKeyResponse{
-		KeyID:   keyID,
-		APIKey:  fullKey,
-		AppName: req.AppName,
-	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-func storeAPIKey(req GenerateKeyRequest, keyID string, hashedSecret []byte) error {
+func storeAPIKey(appName string, keyID string, hashedSecret []byte) error {
 	query := `
         INSERT INTO application (app_name, key_id, hashed_key)
-        VALUES ($1, $2, $3)
+        	VALUES ($1, $2, $3)
     `
-	_, err := database.DB.Exec(query, req.AppName, keyID, hashedSecret)
+	_, err := database.DB.Exec(query, appName, keyID, hashedSecret)
 	if err != nil {
 		return fmt.Errorf("database storage failed")
-
 	}
 
 	return nil
