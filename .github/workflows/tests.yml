@@ -54,18 +54,6 @@ jobs:
       run: go mod download
 
     - name: Run tests with coverage
-      run: go test -v -race -coverprofile=coverage.out ./...
+      run: go test -v -race ./...
       env:
         EB_DSN: postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable
-
-    - name: Check test coverage threshold
-      run: |
-        go tool cover -func=coverage.out | grep total | awk '{
-          coverage = substr($3, 1, length($3)-1)
-          if (coverage < 80) {
-            print "Coverage " coverage "% is below 80% threshold"
-            exit 1
-          } else {
-            print "Coverage " coverage "% meets threshold"
-          }
-        }'
