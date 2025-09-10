@@ -103,7 +103,7 @@ func storeAPIKey(appName string, keyID string, hashedSecret []byte) error {
     `
 	_, err := database.DB.Exec(query, appName, keyID, hashedSecret)
 	if err != nil {
-		return fmt.Errorf("database storage failed")
+		return fmt.Errorf("database storage failed: %s", err.Error())
 	}
 
 	return nil
