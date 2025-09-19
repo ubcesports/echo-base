@@ -21,7 +21,15 @@ func LoadEnv(path string) {
 		}
 		tokens := strings.SplitN(line, "=", 2)
 		if len(tokens) == 2{
-			os.Setenv(tokens[0], tokens[1])
+			key := strings.TrimSpace(tokens[0])
+			value := strings.TrimSpace(tokens[1])
+
+			if (strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`)) ||
+			   (strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				value = value[1 : len(value)-1]
+			}
+
+			os.Setenv(key, value)
 		}
 	}
 }
