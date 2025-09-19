@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-func LoadEnv(path string) {
+func LoadEnv(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		return
+		return err
 	}
 	defer file.Close()
 
@@ -21,7 +21,16 @@ func LoadEnv(path string) {
 		}
 		tokens := strings.SplitN(line, "=", 2)
 		if len(tokens) == 2{
-			os.Setenv(tokens[0], tokens[1])
+			key := strings.TrimSpace(tokens[0])
+			value := strings.TrimSpace(tokens[1])
+
+			if (strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`)) ||
+			   (strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				value = value[1 : len(value)-1]
+			}
+
+			os.Setenv(key, value)
 		}
 	}
+	return nil
 }
