@@ -15,8 +15,13 @@ func main() {
 	config.LoadEnv(".env")
 	cfg := config.LoadConfig()
 
-	// Initialize activity handlers with config
-	ah := &handlers.Handler{Config: cfg}
+	database.Init()
+	defer database.Close()
+
+	ah := &handlers.Handler{
+		Config: cfg,
+		DB:     database.DB,
+	}
 
 	// Initialize database connection
 	database.Init()
@@ -28,7 +33,7 @@ func main() {
 	mux.HandleFunc("/health", handlers.HealthCheck)
 	mux.HandleFunc("/db/ping", handlers.DatabasePing)
 	mux.HandleFunc("/admin/generate-key", handlers.GenerateAPIKey)
-	mux.HandleFunc("/activity/{student_number}", ah.GetGamerActivityByStudent)
+	mux.HandleFunc("/activity/{student_number}", handlers.Wrap(ah.GetGamerActivityByStudent))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Echo Base API is running!"))
 	})

@@ -28,17 +28,10 @@ func LoadEnv(path string) {
 }
 
 type Config struct {
-	Schema   string
 	Location *time.Location
 }
 
 func LoadConfig() *Config {
-	// Pick schema based on environment
-	schema := os.Getenv("LIVE_SCHEMA")
-	if os.Getenv("NODE_ENV") == "test" {
-		schema = os.Getenv("TEST_SCHEMA")
-	}
-
 	// Load timezone once
 	loc, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
@@ -46,7 +39,6 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		Schema:   schema,
 		Location: loc,
 	}
 }

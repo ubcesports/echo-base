@@ -41,7 +41,10 @@ func processAPIKey(apiKey string) (appName string, err error) {
         FROM application 
         WHERE key_id = $1
     `
-	err = database.DB.QueryRow(query, keyID).Scan(&appName, &hashedSecret, &lastUsed)
+
+	ctx := context.Background()
+	err = database.DB.QueryRow(ctx, query, keyID).Scan(&appName, &hashedSecret, &lastUsed)
+
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +55,8 @@ func processAPIKey(apiKey string) (appName string, err error) {
 
 	updateQuery := `UPDATE application SET last_used_at = NOW() WHERE key_id = $1`
 	go func() {
-		database.DB.Exec(updateQuery, keyID)
+		ctx := context.Background()
+		database.DB.Exec(ctx, updateQuery, keyID)
 	}()
 
 	return appName, nil

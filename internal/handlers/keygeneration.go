@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base32"
@@ -92,7 +93,7 @@ func storeAPIKey(req GenerateKeyRequest, keyID string, hashedSecret []byte) erro
         INSERT INTO application (app_name, key_id, hashed_key)
         VALUES ($1, $2, $3)
     `
-	_, err := database.DB.Exec(query, req.AppName, keyID, hashedSecret)
+	_, err := database.DB.Exec(context.Background(), query, req.AppName, keyID, hashedSecret)
 	if err != nil {
 		return fmt.Errorf("database storage failed")
 
