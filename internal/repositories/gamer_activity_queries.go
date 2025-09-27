@@ -18,7 +18,7 @@ func BuildGamerActivityByTierOneStudentTodayQuery() string {
         ON ga.student_number = gp.student_number
         WHERE ga.student_number = $1
         AND gp.membership_tier = 1
-		AND DATE(ga.started_at) = DATA($2)`
+		AND DATE(ga.started_at) = DATE($2)`
 	return query
 }
 

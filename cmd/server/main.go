@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -18,10 +19,19 @@ func main() {
 	database.Init()
 	defer database.Close()
 
+	// Gamer Activity Handler
 	ah := &handlers.Handler{
 		Config: cfg,
 		DB:     database.DB,
 	}
+
+	// Logger
+	logger := slog.New(
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}),
+	)
+	slog.SetDefault(logger)
 
 	// Initialize database connection
 	database.Init()
@@ -34,6 +44,12 @@ func main() {
 	mux.HandleFunc("/db/ping", handlers.DatabasePing)
 	mux.HandleFunc("/admin/generate-key", handlers.GenerateAPIKey)
 	mux.HandleFunc("/activity/{student_number}", handlers.Wrap(ah.GetGamerActivityByStudent))
+	mux.HandleFunc("/activity", handlers.Wrap(ah.AddGamerActivity))
+	mux.HandleFunc("/activity/today/{student_number}", handlers.Wrap(ah.GetGamerActivityByTierOneStudentToday))
+	mux.HandleFunc("/activity/all/recent", handlers.Wrap(ah.GetGamerActivity))
+	mux.HandleFunc("/activity/update/{student_number}", handlers.Wrap(ah.UpdateGamerActivity))
+	mux.HandleFunc("/activity/get-active-pcs", handlers.Wrap(ah.GetAllActivePCs))
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Echo Base API is running!"))
 	})

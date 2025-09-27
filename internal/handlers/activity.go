@@ -86,7 +86,7 @@ func (h *Handler) AddGamerActivity(w http.ResponseWriter, r *http.Request) error
 
 	var m models.MembershipResult
 	checkMemberQuery := repositories.BuildCheckMemberQuery()
-	if err := pgxscan.Select(ctx, h.DB, &m, checkMemberQuery, ga.StudentNumber); err != nil {
+	if err := pgxscan.Get(ctx, h.DB, &m, checkMemberQuery, ga.StudentNumber); err != nil {
 		msg := fmt.Sprintf("foreign key %s not found", ga.StudentNumber)
 		return NewHTTPError(http.StatusNotFound, msg, err)
 	}
