@@ -11,7 +11,7 @@ import (
 )
 
 func TestGenerateAPIKey(t *testing.T) {
-	tests.SetupTestDB(t)
+	tests.SetupTestDBForTest(t)
 
 	testCases := []struct {
 		name           string
@@ -84,3 +84,35 @@ func TestGenerateAPIKey(t *testing.T) {
 		})
 	}
 }
+
+/*
+for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var response GenerateKeyResponse
+
+			if tc.rawBody != "" {
+				req, _ := http.NewRequest(tc.method, "/admin/generate-key", strings.NewReader(tc.rawBody))
+				req.Header.Set("Content-Type", "application/json")
+				rr := httptest.NewRecorder()
+				handler := http.HandlerFunc(GenerateAPIKey)
+				handler.ServeHTTP(rr, req)
+				tests.AssertResponse(t, rr, tc.expectedStatus, nil)
+			} else {
+				tests.ExecuteTestRequest(t, http.HandlerFunc(GenerateAPIKey), tc.method, "/admin/generate-key", tc.body, tc.expectedStatus, &response)
+			}
+
+			if tc.expectKey {
+				if response.KeyID == "" {
+					t.Error("KeyID should not be empty")
+				}
+				if !strings.HasPrefix(response.APIKey, "api_") {
+					t.Error("API key should start with 'api_'")
+				}
+				if response.AppName != "test-app" {
+					t.Errorf("Expected app name 'test-app', got '%s'", response.AppName)
+				}
+			}
+		})
+	}
+}
+*/

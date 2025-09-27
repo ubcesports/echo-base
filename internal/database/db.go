@@ -1,29 +1,39 @@
 package database
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 )
 
-var DB *sql.DB
+var DB *pgxpool.Pool
 
 func Init() {
+	dsn := os.Getenv("EB_DSN")
+	if dsn == "" {
+		log.Fatal("EB_DSN environment variable not set")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	var err error
-	DB, err = sql.Open("postgres", os.Getenv("EB_DSN"))
+	DB, err = pgxpool.New(ctx, dsn)
 	if err != nil {
-		log.Fatal("DB open error:", err)
+		log.Fatal("Failed to connect to database:", err)
 	}
 
 	// Test the connection
-	if err = DB.Ping(); err != nil {
-		log.Fatal("DB ping error:", err)
+	if err = DB.Ping(ctx); err != nil {
+		log.Fatal("Database ping failed:", err)
 	}
 
-	log.Println("Connected to database")
+	log.Println("Connected to database (pgxpool)")
 }
 
 // Ping checks if the database connection is still alive
@@ -31,13 +41,13 @@ func Ping() error {
 	if DB == nil {
 		return fmt.Errorf("database connection not initialized")
 	}
-	return DB.Ping()
+	return DB.Ping(context.Background())
 }
 
 // Close closes the database connection
 func Close() error {
 	if DB != nil {
-		return DB.Close()
+		DB.Close()
 	}
 	return nil
 }

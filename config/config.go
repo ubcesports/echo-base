@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	"time"
 )
 
 func LoadEnv(path string) error {
@@ -20,12 +21,12 @@ func LoadEnv(path string) error {
 			continue
 		}
 		tokens := strings.SplitN(line, "=", 2)
-		if len(tokens) == 2{
+		if len(tokens) == 2 {
 			key := strings.TrimSpace(tokens[0])
 			value := strings.TrimSpace(tokens[1])
 
 			if (strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`)) ||
-			   (strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
 				value = value[1 : len(value)-1]
 			}
 
@@ -33,4 +34,20 @@ func LoadEnv(path string) error {
 		}
 	}
 	return nil
+}
+
+type Config struct {
+	Location *time.Location
+}
+
+func LoadConfig() *Config {
+	// Load timezone once
+	loc, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		panic("failed to load timezone: " + err.Error())
+	}
+
+	return &Config{
+		Location: loc,
+	}
 }

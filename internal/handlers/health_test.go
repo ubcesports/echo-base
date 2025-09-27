@@ -2,28 +2,22 @@ package handlers
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/ubcesports/echo-base/internal/tests"
 )
 
 func TestHealthCheck(t *testing.T) {
-	tests.SetupTestDB(t)
-
-	req := tests.CreateTestRequest(t, "GET", "/health", nil)
-	rr := httptest.NewRecorder()
+	tests.SetupTestDBForTest(t)
 	handler := http.HandlerFunc(HealthCheck)
-	handler.ServeHTTP(rr, req)
+
+	rr := tests.ExecuteTestRequest(t, handler, http.MethodGet, "/health", nil)
 
 	var response HealthResponse
 	tests.AssertResponse(t, rr, http.StatusOK, &response)
 
-	if response.Status != "ok" {
-		t.Errorf("Expected status 'ok', got '%s'", response.Status)
-	}
-
-	if response.Database != "ok" {
-		t.Errorf("Expected database status 'ok', got '%s'", response.Database)
-	}
+	require.Equal(t, "ok", response.Status)
+	require.Equal(t, "ok", response.Database)
 }

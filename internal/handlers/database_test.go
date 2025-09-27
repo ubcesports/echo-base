@@ -2,28 +2,20 @@ package handlers
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/ubcesports/echo-base/internal/tests"
 )
 
 func TestDatabasePing(t *testing.T) {
-	tests.SetupTestDB(t)
-
-	req := tests.CreateTestRequest(t, "GET", "/db/ping", nil)
-	rr := httptest.NewRecorder()
+	tests.SetupTestDBForTest(t)
 	handler := http.HandlerFunc(DatabasePing)
-	handler.ServeHTTP(rr, req)
+
+	rr := tests.ExecuteTestRequest(t, handler, "GET", "/db/ping", nil)
 
 	var response DatabasePingResponse
 	tests.AssertResponse(t, rr, http.StatusOK, &response)
-
-	if response.Status != "ok" {
-		t.Errorf("Expected status 'ok', got '%s'", response.Status)
-	}
-
-	if response.ResponseTime == "" {
-		t.Error("Response time should not be empty")
-	}
+	require.Equal(t, "ok", response.Status, "Expected status 'ok'")
+	require.NotEmpty(t, response.ResponseTime, "Response time should not be empty")
 }

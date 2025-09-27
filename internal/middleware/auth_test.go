@@ -9,7 +9,7 @@ import (
 )
 
 func TestAuthMiddleware(t *testing.T) {
-	tests.SetupTestDB(t)
+	tests.SetupTestDBForTest(t)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

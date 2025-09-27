@@ -7,7 +7,8 @@ CREATE TABLE gamer_profile
     membership_tier INTEGER DEFAULT 0 NOT NULL,
     banned          BOOLEAN,
     notes           VARCHAR(250),
-    created_at      DATE
+    created_at      DATE,
+    membership_expiry_date DATE
 );
 
 CREATE TABLE gamer_activity
