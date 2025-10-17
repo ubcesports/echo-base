@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ubcesports/echo-base/internal/services/auth"
+	"github.com/ubcesports/echo-base/internal/interfaces/auth"
 )
 
 type AuthRepository struct {
