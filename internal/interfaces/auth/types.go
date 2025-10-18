@@ -1,18 +1,9 @@
 package auth
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
 type Application struct {
-	Id         uuid.UUID
-	AppName    string
-	KeyId      string
-	HashedKey  []byte
-	CreatedAt  time.Time
-	LastUsedAt time.Time
+	AppName   string
+	KeyId     string
+	HashedKey []byte
 }
 
 type APIKey struct {
