@@ -3,7 +3,6 @@ module github.com/ubcesports/echo-base
 go 1.24
 
 require (
-	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.8.0
 )
@@ -23,6 +22,7 @@ require (
 	github.com/godror/godror v0.40.4 // indirect
 	github.com/godror/knownpb v0.1.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
