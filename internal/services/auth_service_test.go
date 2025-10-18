@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,9 +34,19 @@ func TestGenerateAPIKey(t *testing.T) {
 		applications: make(map[string]*auth.Application),
 	}
 	authService := NewAuthService(mockRepo)
+
+	// Valid Key
 	apiKey, err := authService.GenerateAPIKey(context.Background(), "test-app")
 	assert.NoError(t, err)
 	assert.Equal(t, "test-app", apiKey.AppName)
+
+	// Invalid key, no app name
+	apiKey, err = authService.GenerateAPIKey(context.Background(), "")
+	assert.Error(t, err)
+
+	// Invalid key, too long
+	apiKey, err = authService.GenerateAPIKey(context.Background(), strings.Repeat("a", 101))
+	assert.Error(t, err)
 }
 
 func TestValidateAPIKey(t *testing.T) {
