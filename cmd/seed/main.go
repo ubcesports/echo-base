@@ -5,7 +5,6 @@ import (
 
 	"github.com/ubcesports/echo-base/config"
 	"github.com/ubcesports/echo-base/internal/database"
-	"github.com/ubcesports/echo-base/internal/handlers"
 )
 
 func main() {
@@ -24,13 +23,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	response, err := handlers.CreateApiKey(os.Args[2])
-	if err != nil {
-		println("error while generating api key:", err.Error())
-		os.Exit(1)
-	}
-
-	println("generated api key!")
-	println("key id:", response.KeyID)
-	println("token:", response.APIKey)
+	// response, err := handlers.CreateApiKey(os.Args[2])
+	//
+	//	if err != nil {
+	//		println("error while generating api key:", err.Error())
+	//		os.Exit(1)
+	//	}
+	//
+	// println("generated api key!")
+	// println("key id:", response.KeyID)
+	// println("token:", response.APIKey)
 }
