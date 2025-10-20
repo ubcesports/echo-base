@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ubcesports/echo-base/internal/services"
+	"github.com/ubcesports/echo-base/internal/interfaces/auth"
 )
 
 type AuthHandler struct {
-	authService *services.AuthService
+	authService auth.AuthService
 }
 
-func NewAuthHandler(authService *services.AuthService) *AuthHandler {
+func NewAuthHandler(authService auth.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
