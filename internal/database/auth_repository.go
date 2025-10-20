@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/ubcesports/echo-base/internal/interfaces/auth"
 )
@@ -47,7 +46,7 @@ func (r *AuthRepository) FindKeyById(ctx context.Context, keyId string) (*auth.A
 }
 
 func (r *AuthRepository) UpdateLastUsed(ctx context.Context, keyId string) error {
-	query := `UPDATE application SET last_used_at = $1 WHERE key_id = $2`
-	_, err := r.db.ExecContext(ctx, query, time.Now(), keyId)
+	query := `UPDATE application SET last_used_at = NOW() WHERE key_id = $1`
+	_, err := r.db.ExecContext(ctx, query, keyId)
 	return err
 }
