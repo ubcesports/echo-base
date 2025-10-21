@@ -25,15 +25,20 @@ var (
 	validAppNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
-type AuthService struct {
+type AuthService interface {
+	GenerateAPIKey(ctx context.Context, appName string) (*auth.APIKey, error)
+	ValidateAPIKey(ctx context.Context, apiKey string) (string, error)
+}
+
+type authService struct {
 	repo auth.AuthRepository
 }
 
-func NewAuthService(repo auth.AuthRepository) *AuthService {
-	return &AuthService{repo: repo}
+func NewAuthService(repo auth.AuthRepository) *authService {
+	return &authService{repo: repo}
 }
 
-func (s *AuthService) GenerateAPIKey(ctx context.Context, appName string) (*auth.APIKey, error) {
+func (s *authService) GenerateAPIKey(ctx context.Context, appName string) (*auth.APIKey, error) {
 	if err := s.validateAppName(appName); err != nil {
 		return nil, err
 	}
@@ -60,7 +65,7 @@ func (s *AuthService) GenerateAPIKey(ctx context.Context, appName string) (*auth
 	}, nil
 }
 
-func (s *AuthService) ValidateAPIKey(ctx context.Context, apiKey string) (string, error) {
+func (s *authService) ValidateAPIKey(ctx context.Context, apiKey string) (string, error) {
 
 	keyId, secret, err := s.parseAPIKey(apiKey)
 
@@ -79,7 +84,7 @@ func (s *AuthService) ValidateAPIKey(ctx context.Context, apiKey string) (string
 	return app.AppName, nil
 }
 
-func (s *AuthService) genereateCredentials() (string, string, error) {
+func (s *authService) genereateCredentials() (string, string, error) {
 	keyIDBytes := make([]byte, KeyIDLength)
 	_, err := rand.Read(keyIDBytes)
 	if err != nil {
@@ -96,14 +101,14 @@ func (s *AuthService) genereateCredentials() (string, string, error) {
 	return keyId, secret, nil
 }
 
-func (s *AuthService) hashSecret(secret string) []byte {
+func (s *authService) hashSecret(secret string) []byte {
 	hasher := sha256.New()
 	hasher.Write([]byte(secret))
 	hashedSecret := hasher.Sum(nil)
 	return hashedSecret
 }
 
-func (s *AuthService) validateAppName(appName string) error {
+func (s *authService) validateAppName(appName string) error {
 	if appName == "" {
 		return fmt.Errorf("app_name is required")
 	}
@@ -119,7 +124,7 @@ func (s *AuthService) validateAppName(appName string) error {
 	return nil
 }
 
-func (s *AuthService) parseAPIKey(apiKey string) (string, string, error) {
+func (s *authService) parseAPIKey(apiKey string) (string, string, error) {
 	if !strings.HasPrefix(apiKey, "api_") {
 		return "", "", fmt.Errorf("invalid api_key format, missing \"api_\" prefix")
 	}
@@ -134,7 +139,7 @@ func (s *AuthService) parseAPIKey(apiKey string) (string, string, error) {
 	return keyId, secret, nil
 }
 
-func (s *AuthService) verifySecret(secret string, hashedSecret []byte) bool {
+func (s *authService) verifySecret(secret string, hashedSecret []byte) bool {
 	hasher := sha256.New()
 	hasher.Write([]byte(secret))
 	actualHash := hasher.Sum(nil)

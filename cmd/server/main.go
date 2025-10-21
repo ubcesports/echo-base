@@ -1,46 +1,71 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/ubcesports/echo-base/config"
+	"github.com/ubcesports/echo-base/internal"
 	"github.com/ubcesports/echo-base/internal/database"
-	"github.com/ubcesports/echo-base/internal/handlers"
-	"github.com/ubcesports/echo-base/internal/middleware"
+	"github.com/ubcesports/echo-base/internal/services"
 )
 
+const TIMEOUT = 10
+
 func main() {
+	if err := bootstrap(context.Background(), os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+func bootstrap(ctx context.Context, args []string) error {
 	config.LoadEnv(".env")
-
-	// Initialize database connection
 	database.Init()
-	defer database.Close()
 
-	// Set up HTTP routes
-	mux := http.NewServeMux()
+	// Initialize repositories
+	authRepo := database.NewAuthRepository(database.DB)
 
-	mux.HandleFunc("/health", handlers.HealthCheck)
-	mux.HandleFunc("/db/ping", handlers.DatabasePing)
-	// mux.HandleFunc("/admin/generate-key", handlers.GenerateAPIKey)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Echo Base API is running!"))
-	})
+	// Initialize services
+	authService := services.NewAuthService(authRepo)
 
-	// Apply auth middleware to all routes
-	handler := middleware.AuthMiddleware(mux)
+	// Initialize server
+	srv := internal.NewServer(authService)
 
-	// Get port from environment or default to 8080
-	port := os.Getenv("EB_PORT")
-	if port == "" {
-		port = "8080"
+	httpServer := &http.Server{
+		Addr:    ":" + os.Getenv("EB_PORT"),
+		Handler: srv,
 	}
 
-	log.Printf("Server starting on port %s", port)
-	log.Printf("Health check available at http://localhost:%s/health", port)
+	// Run server in its own goroutine
+	go func() {
+		log.Printf("listening on %s\n", httpServer.Addr)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+		}
+	}()
 
-	if err := http.ListenAndServe(":"+port, handler); err != nil {
-		log.Fatal("Server failed to start:", err)
-	}
+	// Shutdown Gracefully
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		shutdownCtx := context.Background()
+		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, TIMEOUT*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+		}
+		if err := database.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "error closing database: %s\n", err)
+		}
+	}()
+	wg.Wait()
+	return nil
 }
