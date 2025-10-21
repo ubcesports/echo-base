@@ -18,7 +18,7 @@ func NewAuthRepository(db *sql.DB) *AuthRepository {
 func (r *AuthRepository) Store(ctx context.Context, app *auth.Application) error {
 	query := `
         INSERT INTO application (app_name, key_id, hashed_key)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3)
     `
 	_, err := r.db.ExecContext(ctx, query,
 		app.AppName, app.KeyId, app.HashedKey)

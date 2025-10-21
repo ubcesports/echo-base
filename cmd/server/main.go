@@ -12,6 +12,7 @@ import (
 	"github.com/ubcesports/echo-base/config"
 	"github.com/ubcesports/echo-base/internal"
 	"github.com/ubcesports/echo-base/internal/database"
+	"github.com/ubcesports/echo-base/internal/services"
 )
 
 func main() {
@@ -25,13 +26,21 @@ func run(ctx context.Context, args []string) error {
 	config.LoadEnv(".env")
 	database.Init()
 
-	srv := internal.NewServer()
+	// Initialize repositories
+	authRepo := database.NewAuthRepository(database.DB)
+
+	// Initialize services
+	authService := services.NewAuthService(authRepo)
+
+	// Initialize server
+	srv := internal.NewServer(authService)
 
 	httpServer := &http.Server{
 		Addr:    ":" + os.Getenv("EB_PORT"),
 		Handler: srv,
 	}
 
+	// Run server in its own goroutine
 	go func() {
 		log.Printf("listening on %s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {

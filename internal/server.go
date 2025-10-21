@@ -2,18 +2,23 @@ package internal
 
 import (
 	"net/http"
+
+	"github.com/ubcesports/echo-base/internal/middleware"
+	"github.com/ubcesports/echo-base/internal/services"
 )
 
-func NewServer() http.Handler {
+func NewServer(
+	authService *services.AuthService,
+) http.Handler {
 	mux := http.NewServeMux()
-	AddRoutes(mux)
+	AddRoutes(
+		mux,
+		authService,
+	)
 
 	var handler http.Handler = mux
-	//
-	//	var authService auth.AuthService
-	//	authMiddleware := middleware.NewAuthMiddleware(authService)
-	//
-	//	handler = authMiddleware.Middleware(handler)
+	handler = middleware.AuthMiddleware(handler, *authService)
+
 	return handler
 
 }
