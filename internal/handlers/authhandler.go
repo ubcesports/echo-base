@@ -11,7 +11,7 @@ type GenerateKeyRequest struct {
 	AppName string `json:"app_name"`
 }
 
-func GenerateAPIKey(authService *services.AuthService) http.Handler {
+func GenerateAPIKey(authService services.AuthService) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodPost {

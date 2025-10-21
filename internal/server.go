@@ -8,7 +8,7 @@ import (
 )
 
 func NewServer(
-	authService *services.AuthService,
+	authService services.AuthService,
 ) http.Handler {
 	mux := http.NewServeMux()
 	AddRoutes(

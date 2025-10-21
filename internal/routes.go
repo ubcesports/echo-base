@@ -9,7 +9,7 @@ import (
 
 func AddRoutes(
 	mux *http.ServeMux,
-	authService *services.AuthService,
+	authService services.AuthService,
 ) {
 	mux.HandleFunc("/health", handlers.HealthCheck)
 	mux.HandleFunc("/db/ping", handlers.DatabasePing)
