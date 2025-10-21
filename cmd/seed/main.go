@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"os"
 
-	"github.com/ubcesports/echo-base/config"
 	"github.com/ubcesports/echo-base/internal/database"
+	"github.com/ubcesports/echo-base/internal/services"
 )
 
 func main() {
-	config.LoadEnv(".env")
+	os.Setenv("EB_DSN", "postgresql://user:pass@localhost/echobase?sslmode=disable")
 
 	database.Init()
 	defer database.Close()
@@ -23,14 +24,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// response, err := handlers.CreateApiKey(os.Args[2])
-	//
-	//	if err != nil {
-	//		println("error while generating api key:", err.Error())
-	//		os.Exit(1)
-	//	}
-	//
-	// println("generated api key!")
-	// println("key id:", response.KeyID)
-	// println("token:", response.APIKey)
+	authRepo := database.NewAuthRepository(database.DB)
+	authService := services.NewAuthService(authRepo)
+
+	response, err := authService.GenerateAPIKey(context.Background(), os.Args[2])
+
+	if err != nil {
+		println("error while generating api key:", err.Error())
+		os.Exit(1)
+	}
+
+	println("generated api key!")
+	println("key id:", response.KeyId)
+	println("token:", response.APIKey)
 }

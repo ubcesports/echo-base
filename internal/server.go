@@ -17,7 +17,7 @@ func NewServer(
 	)
 
 	var handler http.Handler = mux
-	handler = middleware.AuthMiddleware(handler, *authService)
+	handler = middleware.AuthMiddleware(handler, authService)
 
 	return handler
 

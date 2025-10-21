@@ -8,7 +8,7 @@ import (
 	"github.com/ubcesports/echo-base/internal/services"
 )
 
-func AuthMiddleware(next http.Handler, authService services.AuthService) http.Handler {
+func AuthMiddleware(next http.Handler, authService *services.AuthService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
