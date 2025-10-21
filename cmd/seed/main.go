@@ -4,13 +4,13 @@ import (
 	"context"
 	"os"
 
+	"github.com/ubcesports/echo-base/config"
 	"github.com/ubcesports/echo-base/internal/database"
 	"github.com/ubcesports/echo-base/internal/services"
 )
 
 func main() {
-	os.Setenv("EB_DSN", "postgresql://user:pass@localhost/echobase?sslmode=disable")
-
+	config.LoadEnv(".env")
 	database.Init()
 	defer database.Close()
 

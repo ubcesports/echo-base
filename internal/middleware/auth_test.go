@@ -33,8 +33,6 @@ func TestAuthMiddleware(t *testing.T) {
 		},
 	}
 
-	middleware := NewAuthMiddleware(mockService)
-
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		appName := r.Context().Value("appName").(string)
 		w.WriteHeader(http.StatusOK)
@@ -78,7 +76,7 @@ func TestAuthMiddleware(t *testing.T) {
 			}
 
 			rr := httptest.NewRecorder()
-			handler := middleware.Middleware(testHandler)
+			handler := AuthMiddleware(testHandler, mockService)
 			handler.ServeHTTP(rr, req)
 
 			assert.Equal(t, tc.expectedStatus, rr.Code)

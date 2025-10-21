@@ -15,14 +15,16 @@ import (
 	"github.com/ubcesports/echo-base/internal/services"
 )
 
+const TIMEOUT = 10
+
 func main() {
-	if err := run(context.Background(), os.Args); err != nil {
+	if err := bootstrap(context.Background(), os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, args []string) error {
+func bootstrap(ctx context.Context, args []string) error {
 	config.LoadEnv(".env")
 	database.Init()
 
@@ -55,7 +57,7 @@ func run(ctx context.Context, args []string) error {
 		defer wg.Done()
 		<-ctx.Done()
 		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 11*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, TIMEOUT*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
