@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// GetPacificLocation returns the America/Los_Angeles timezone location
 func GetPacificLocation() (*time.Location, error) {
 	loc, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
@@ -14,7 +13,6 @@ func GetPacificLocation() (*time.Location, error) {
 	return loc, nil
 }
 
-// NowInPacific returns the current time in Pacific timezone
 func NowInPacific() (time.Time, error) {
 	loc, err := GetPacificLocation()
 	if err != nil {
@@ -26,6 +24,8 @@ func NowInPacific() (time.Time, error) {
 // GetNextMayFirst calculates the next May 1st in Pacific timezone
 // If current month >= May, returns May 1st of next year
 // Otherwise returns May 1st of current year
+// This is because when memberships are created they expire on the 
+// very next May first
 func GetNextMayFirst() (*time.Time, error) {
 	loc, err := GetPacificLocation()
 	if err != nil {
@@ -35,7 +35,6 @@ func GetNextMayFirst() (*time.Time, error) {
 	now := time.Now().In(loc)
 	year := now.Year()
 
-	// If current month >= May (month 5), use next year
 	if now.Month() >= time.May {
 		year++
 	}
@@ -63,7 +62,6 @@ func IsDateExpired(expiryDate *time.Time) (bool, error) {
 	return today.After(expiry), nil
 }
 
-// TruncateToDate truncates a time to start of day (00:00:00)
 func TruncateToDate(t time.Time) time.Time {
 	return t.Truncate(24 * time.Hour)
 }
