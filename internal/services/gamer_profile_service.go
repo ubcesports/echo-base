@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/ubcesports/echo-base/internal/errors"
 	"github.com/ubcesports/echo-base/internal/interfaces/gamer"
 	"github.com/ubcesports/echo-base/internal/models"
 	"github.com/ubcesports/echo-base/internal/utils"
@@ -34,16 +35,16 @@ func (s *gamerProfileService) CreateOrUpdateProfile(ctx context.Context, req *mo
 	}
 
 	if req.FirstName == "" {
-		return nil, fmt.Errorf("first_name is required")
+		return nil, errors.NewValidationError("first_name", "is required")
 	}
 
 	if req.LastName == "" {
-		return nil, fmt.Errorf("last_name is required")
+		return nil, errors.NewValidationError("last_name", "is required")
 	}
 
 	tier, err := models.NewMembershipTier(req.MembershipTier)
 	if err != nil {
-		return nil, fmt.Errorf("invalid membership_tier: %w", err)
+		return nil, errors.NewValidationError("membership_tier", err.Error())
 	}
 
 	expiryDate, err := tier.GetExpiryDate()
@@ -80,7 +81,7 @@ func (s *gamerProfileService) DeleteProfile(ctx context.Context, studentNumber s
 
 func validateStudentNumber(studentNumber string) error {
 	if !studentNumberRegex.MatchString(studentNumber) {
-		return fmt.Errorf("student_number must be exactly 8 digits")
+		return errors.NewValidationError("student_number", "must be exactly 8 digits")
 	}
 	return nil
 }
