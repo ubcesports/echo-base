@@ -183,9 +183,8 @@ func TestTierExpiryBoundary(t *testing.T) {
 		t.Fatalf("GetPacificLocation() error = %v", err)
 	}
 
-	mayFirst2024 := time.Date(2024, time.May, 1, 0, 0, 0, 0, loc)
-	april30_2024 := time.Date(2024, time.April, 30, 23, 59, 59, 0, loc)
-	may2_2024 := time.Date(2024, time.May, 2, 0, 0, 1, 0, loc)
+	today := time.Now().In(loc)
+	todayStart := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, loc)
 
 	tier, err := NewMembershipTier(1)
 	if err != nil {
@@ -195,12 +194,12 @@ func TestTierExpiryBoundary(t *testing.T) {
 	tests := []struct {
 		name        string
 		expiryDate  time.Time
-		checkDate   time.Time
 		wantExpired bool
 	}{
-		{"Check on expiry date", mayFirst2024, mayFirst2024, false},
-		{"Check day before expiry", mayFirst2024, april30_2024, false},
-		{"Check day after expiry", mayFirst2024, may2_2024, true},
+		{"Expires today", todayStart, false},
+		{"Expired yesterday", todayStart.AddDate(0, 0, -1), true},
+		{"Expires tomorrow", todayStart.AddDate(0, 0, 1), false},
+		{"Expired last month", todayStart.AddDate(0, -1, 0), true},
 	}
 
 	for _, tt := range tests {
@@ -211,9 +210,8 @@ func TestTierExpiryBoundary(t *testing.T) {
 			}
 
 			if expired != tt.wantExpired {
-				t.Errorf("IsExpired(%v) at %v = %v, want %v",
+				t.Errorf("IsExpired(%v) = %v, want %v",
 					tt.expiryDate.Format("2006-01-02"),
-					tt.checkDate.Format("2006-01-02"),
 					expired, tt.wantExpired)
 			}
 		})
