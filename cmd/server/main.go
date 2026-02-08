@@ -30,12 +30,16 @@ func bootstrap(ctx context.Context, args []string) error {
 
 	// Initialize repositories
 	authRepo := database.NewAuthRepository(database.DB)
+	gamerProfileRepo := database.NewGamerProfileRepository(database.DB)
+	gamerActivityRepo := database.NewGamerActivityRepository(database.DB)
 
 	// Initialize services
 	authService := services.NewAuthService(authRepo)
+	gamerProfileService := services.NewGamerProfileService(gamerProfileRepo)
+	gamerActivityService := services.NewGamerActivityService(gamerActivityRepo, gamerProfileRepo)
 
 	// Initialize server
-	srv := internal.NewServer(authService)
+	srv := internal.NewServer(authService, gamerProfileService, gamerActivityService)
 
 	httpServer := &http.Server{
 		Addr:    ":" + os.Getenv("EB_PORT"),
