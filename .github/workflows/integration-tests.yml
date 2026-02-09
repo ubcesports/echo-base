@@ -1,4 +1,4 @@
-name: Test Suite
+name: Integration Tests
 
 on:
   pull_request:
@@ -7,7 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  unit-tests:
+    uses: ./.github/workflows/unit-tests.yml
+
+  integration-tests:
+    needs: unit-tests
     runs-on: ubuntu-latest
     
     services:
@@ -53,7 +57,7 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run tests 
-      run: go test -v -race ./...
+    - name: Run integration tests
+      run: go test -v -race ./cmd/...
       env:
         EB_DSN: postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable
