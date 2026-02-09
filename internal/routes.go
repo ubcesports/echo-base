@@ -15,7 +15,7 @@ func AddRoutes(
 ) {
 	mux.HandleFunc("/health", handlers.HealthCheck)
 	mux.HandleFunc("/db/ping", handlers.DatabasePing)
-	mux.Handle("/admin/generate-key", handlers.GenerateAPIKey(authService))
+	mux.Handle("POST /admin/generate-key", handlers.GenerateAPIKey(authService))
 
 	mux.Handle("GET /v1/api/gamer/{student_number}", handlers.GetGamerProfile(gamerProfileService))
 	mux.Handle("POST /v1/api/gamer", handlers.CreateOrUpdateGamerProfile(gamerProfileService))
