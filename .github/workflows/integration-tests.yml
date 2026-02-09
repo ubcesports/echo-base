@@ -1,7 +1,7 @@
 name: Integration Tests
 
 on:
-  workflow: call
+  workflow_call:
 
 jobs:
   integration-tests:
