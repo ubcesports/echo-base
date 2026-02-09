@@ -55,11 +55,14 @@ func IsDateExpired(expiryDate *time.Time) (bool, error) {
 		return false, err
 	}
 
-	// Truncate to start of day for date-only comparison
-	today := time.Now().In(loc).Truncate(24 * time.Hour)
-	expiry := expiryDate.In(loc).Truncate(24 * time.Hour)
+	// Get start of day for both dates for proper date-only comparison
+	now := time.Now().In(loc)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
 
-	return today.After(expiry), nil
+	expiry := expiryDate.In(loc)
+	expiryStart := time.Date(expiry.Year(), expiry.Month(), expiry.Day(), 0, 0, 0, 0, loc)
+
+	return today.After(expiryStart), nil
 }
 
 func TruncateToDate(t time.Time) time.Time {

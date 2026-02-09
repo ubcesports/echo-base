@@ -9,11 +9,15 @@ import (
 
 func NewServer(
 	authService services.AuthService,
+	gamerProfileService services.GamerProfileService,
+	gamerActivityService services.GamerActivityService,
 ) http.Handler {
 	mux := http.NewServeMux()
 	AddRoutes(
 		mux,
 		authService,
+		gamerProfileService,
+		gamerActivityService,
 	)
 
 	var handler http.Handler = mux

@@ -111,7 +111,7 @@ func TestStartActivity(t *testing.T) {
 			},
 			profileExists: false,
 			wantErr:       true,
-			errContains:   "Foreign key",
+			errContains:   "not found",
 		},
 		{
 			name: "invalid student number",
