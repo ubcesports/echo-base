@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ubcesports/echo-base/internal/errors"
 	"github.com/ubcesports/echo-base/internal/interfaces/gamer"
 	"github.com/ubcesports/echo-base/internal/models"
 	"github.com/ubcesports/echo-base/internal/utils"
@@ -39,11 +40,11 @@ func (s *gamerActivityService) GetTodayActivities(ctx context.Context, studentNu
 
 func (s *gamerActivityService) GetRecentActivities(ctx context.Context, page, limit int, search string) ([]models.GamerActivity, error) {
 	if page < 1 {
-		return nil, fmt.Errorf("page must be >= 1")
+		return nil, errors.NewValidationError("page", "must be >= 1")
 	}
 
 	if limit < 1 || limit > 100 {
-		return nil, fmt.Errorf("limit must be between 1 and 100")
+		return nil, errors.NewValidationError("limit", "must be between 1 and 100")
 	}
 
 	return s.activityRepo.GetRecentActivities(ctx, page, limit, search)
@@ -55,12 +56,12 @@ func (s *gamerActivityService) StartActivity(ctx context.Context, req *models.Cr
 	}
 
 	if req.Game == "" {
-		return nil, fmt.Errorf("game is required")
+		return nil, errors.NewValidationError("game", "is required")
 	}
 
 	tierNum, expiryDate, err := s.profileRepo.CheckMembershipValidity(ctx, req.StudentNumber)
 	if err != nil {
-		return nil, fmt.Errorf("Foreign key %s not found.", req.StudentNumber)
+		return nil, errors.NewNotFoundError("student", req.StudentNumber)
 	}
 
 	tier, err := models.NewMembershipTier(tierNum)
@@ -78,7 +79,7 @@ func (s *gamerActivityService) StartActivity(ctx context.Context, req *models.Cr
 		if expiryDate != nil {
 			expiryDateStr = expiryDate.Format("2006-01-02")
 		}
-		return nil, fmt.Errorf("%s membership expired on %s. Please ask the user to purchase a new membership. If the member has already purchased a new membership for this year please verify via Showpass then create a new profile for them.", tier.GetName(), expiryDateStr)
+		return nil, errors.NewForbiddenError(fmt.Sprintf("%s membership expired on %s. Please ask the user to purchase a new membership. If the member has already purchased a new membership for this year please verify via Showpass then create a new profile for them.", tier.GetName(), expiryDateStr))
 	}
 
 	startedAt, err := utils.NowInPacific()
@@ -102,7 +103,7 @@ func (s *gamerActivityService) EndActivity(ctx context.Context, studentNumber st
 	}
 
 	if req.ExecName == "" {
-		return nil, fmt.Errorf("exec_name is required")
+		return nil, errors.NewValidationError("exec_name", "is required")
 	}
 
 	endedAt, err := utils.NowInPacific()
