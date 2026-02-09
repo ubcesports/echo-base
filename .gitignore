@@ -2,7 +2,8 @@
 tmp/
 
 # Env
-.env*
+.env
+.env.test
 .direnv/
 
 # OS Metadata
