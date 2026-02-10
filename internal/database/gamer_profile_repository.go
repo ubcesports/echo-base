@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ubcesports/echo-base/internal/errors"
 	"github.com/ubcesports/echo-base/internal/interfaces/gamer"
 	"github.com/ubcesports/echo-base/internal/models"
 )
@@ -40,7 +41,7 @@ func (r *GamerProfileRepository) GetByStudentNumber(ctx context.Context, student
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("student %s not found", studentNumber)
+		return nil, errors.NewNotFoundError("student", studentNumber)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get profile: %w", err)
@@ -110,7 +111,7 @@ func (r *GamerProfileRepository) Delete(ctx context.Context, studentNumber strin
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("student %s not found", studentNumber)
+		return errors.NewNotFoundError("student", studentNumber)
 	}
 
 	return nil
