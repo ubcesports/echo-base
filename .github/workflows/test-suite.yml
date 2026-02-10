@@ -11,4 +11,5 @@ jobs:
     uses: ./.github/workflows/unit-tests.yml
 
   integration-tests:
+    needs: unit-tests
     uses: ./.github/workflows/integration-tests.yml
