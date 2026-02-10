@@ -1,6 +1,11 @@
 # Temporary folders
 tmp/
 
+# Env
+.env
+.env.test
+.direnv/
+
 # OS Metadata
 .DS_Store
 
