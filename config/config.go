@@ -29,9 +29,7 @@ func LoadEnv(path string) error {
 				value = value[1 : len(value)-1]
 			}
 
-			if os.Getenv(key) == "" {
-				os.Setenv(key, value)
-			}
+			os.Setenv(key, value)
 		}
 	}
 	return nil
