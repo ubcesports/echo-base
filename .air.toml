@@ -1,0 +1,11 @@
+#:schema https://json.schemastore.org/any.json
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "CGO_ENABLED=0 go build -o ./tmp/echobase ./cmd/server"
+bin = "tmp/echobase"
+include_ext = ["go"]
+
+[log]
+time = true

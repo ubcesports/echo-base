@@ -20,16 +20,18 @@ func LoadEnv(path string) error {
 			continue
 		}
 		tokens := strings.SplitN(line, "=", 2)
-		if len(tokens) == 2{
+		if len(tokens) == 2 {
 			key := strings.TrimSpace(tokens[0])
 			value := strings.TrimSpace(tokens[1])
 
 			if (strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`)) ||
-			   (strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
 				value = value[1 : len(value)-1]
 			}
 
-			os.Setenv(key, value)
+			if os.Getenv(key) == "" {
+				os.Setenv(key, value)
+			}
 		}
 	}
 	return nil
