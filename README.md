@@ -10,8 +10,8 @@ docker compose up --build -d
 ```
 
 ## Setting up for development
-The application can be run in development using either docker or manually.
-The docker setup is preferred because it does not require additional
+The application can be run in development using either Docker or manually.
+The Docker setup is preferred because it does not require additional
 configuration and will automatically spin up a database for you.
 
 ### Development Environment 
@@ -25,7 +25,9 @@ The application will be accessible at `http://localhost:8080` and the database c
 You can log into the database using these credentials: `postgresql://user:pass@localhost/echobase?sslmode=disable`.
 
 echo-base uses `sql-migrate` to manage its database migrations. You can read the `sql-migrate` docs for more information. 
+
 echo-base also uses Go's tool dependencies for managing development tools. 
+
 You can apply the migrations by running
 ```
 go tool sql-migrate up
