@@ -1,33 +1,51 @@
 # echo-base
+echo-base serves as the backend for all UBC Esports services.
+
+## Running the application
+To run the application, create a `.env` file following `.env.example`.
+
+Then run:
+```
+docker compose up --build -d
+```
 
 ## Setting up for development
-The application can be run in development using either docker or manually.
-The docker setup is preferred because it does not require additional
+The application can be run in development using either Docker or manually.
+The Docker setup is preferred because it does not require additional
 configuration and will automatically spin up a database for you.
 
-### Docker Setup (recommended)
-To run the application using docker, run the command 
-`docker compose up --build` in a new shell. The application should now be 
-accessible at `http://localhost:8080`, and the database should be accessible
-at `postgresql://user:pass@localhost/echobase?sslmode=disable`.
+### Development Environment 
+echo-base uses Docker for its development environment. This is the recommended way to set up the application.
+To run the application using Docker, run 
+```
+docker compose -f compose.dev.yaml up -d
+``` 
+The application will be accessible at `http://localhost:8080` and the database can be found at `postgresql://localhost:5432`.
 
-Once up, ensure your local database has up-to-date migrations by running
-`go tool sql-migrate up`. If there is a need to reset the database,
-run `docker volume rm echo-base_postgres-data` while the application is
-not running.
+You can log into the database using these credentials: `postgresql://user:pass@localhost/echobase?sslmode=disable`.
 
-### Docker Setup with Live Reload
-During development, it is possible to use the development compose configuration
-which uses [air](https://github.com/air-verse/air) to automatically watch for
+echo-base uses `sql-migrate` to manage its database migrations. You can read the `sql-migrate` docs for more information. 
+
+echo-base also uses Go's tool dependencies for managing development tools. 
+
+You can apply the migrations by running
+```
+go tool sql-migrate up
+```
+If there is a need to reset the database, run `docker volume rm echo-base_postgres-data`. 
+
+#### Docker Setup with Live Reload
+The development Docker Compose setup uses [air](https://github.com/air-verse/air) to automatically watch for
 source file changes and reload the application.
 
-To use watch mode, run `docker compose -f compose.dev.yaml up` instead of the
-normal up command. When using watch mode during development, make sure to test
-the application with the full docker build script prior to merging with `main`,
+It is important to note that the development environment uses watch mode instead
+of the normal docker compose file found at `compose.yaml`. When using watch mode 
+during development, make sure to test the application with the full docker build script prior to merging with `main`,
 because the regular build script has various build and container optimizations 
 that are not used in watch mode.
 
 ### Manual Setup
+If you wish to setup your development environment manually:
 Create a `.env` file in `cmd/server`. Ask your directors for the specific
 values for the database connection. 
 
@@ -37,13 +55,24 @@ To check that the server is working, you can run a health ping through the
 `GET /health` endpoint. 
 
 ### Testing
-To run the tests, you need to create a seperate test database locally. The `Makefile` in the root has all the commands needed for running the tests locally. The following steps is the main testing workflow you will likely follow during development.
+Below is the full testing workflow. 
 
-1. Setup test database by running `make test-db-up`.
-2. Run all testings by running `make test`.
-3. Tear down test database by running `make test-db-down`.
-4. Clean up test artifacts by running `make test-clean`. 
+Start test Postgres
+```
+docker compose -f compose.test.yaml up -d
+```
 
-To execute individual tests, run `go test -run <test name regex> ./...` after the test database is up. 
+Run migrations
+```
+DATABASE_URL=postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable sql-migrate up -env=test
+```
 
-To get test coverage, run `make test-coverage`.
+Run integration tests
+```
+EB_DSN=postgresql://user:pass@localhost:5433/echobase_test?sslmode=disable go test -v -tags=integration ./test/integration/...
+```
+
+Stop and cleanup
+```
+docker compose -f compose.test.yaml down
+```

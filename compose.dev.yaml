@@ -3,7 +3,8 @@ name: echo-base
 services:
   app:
     image: cosmtrek/air
-    working_dir: /go/src/app/cmd/server
+    working_dir: /go/src/app
+    command: ["-c", ".air.toml"] 
     depends_on:
       - postgres
     volumes:
@@ -11,7 +12,7 @@ services:
     ports:
       - 8080:8080
     environment:
-      AIR_WD: /go/src/app/cmd/server
+      AIR_WD: /go/src/app
       EB_PORT: 8080
       EB_DSN: postgresql://user:pass@postgres/echobase?sslmode=disable
     networks:
