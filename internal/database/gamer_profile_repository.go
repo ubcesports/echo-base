@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ubcesports/echo-base/internal/database/sqlc"
 	"github.com/ubcesports/echo-base/internal/errors"
 	"github.com/ubcesports/echo-base/internal/interfaces/gamer"
 	"github.com/ubcesports/echo-base/internal/models"
@@ -20,25 +21,8 @@ func NewGamerProfileRepository(db *sql.DB) gamer.GamerProfileRepository {
 }
 
 func (r *GamerProfileRepository) GetByStudentNumber(ctx context.Context, studentNumber string) (*models.GamerProfile, error) {
-	query := `
-		SELECT id, student_number, first_name, last_name, membership_tier,
-		       banned, notes, created_at, membership_expiry_date
-		FROM gamer_profile
-		WHERE student_number = $1
-	`
-
-	profile := &models.GamerProfile{}
-	err := r.db.QueryRowContext(ctx, query, studentNumber).Scan(
-		&profile.ID,
-		&profile.StudentNumber,
-		&profile.FirstName,
-		&profile.LastName,
-		&profile.MembershipTier,
-		&profile.Banned,
-		&profile.Notes,
-		&profile.CreatedAt,
-		&profile.MembershipExpiryDate,
-	)
+	queries := sqlc.New(r.db)
+	profile, err := queries.GetStudent(ctx, studentNumber)
 
 	if err == sql.ErrNoRows {
 		return nil, errors.NewNotFoundError("student", studentNumber)
@@ -47,7 +31,7 @@ func (r *GamerProfileRepository) GetByStudentNumber(ctx context.Context, student
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
 
-	return profile, nil
+	return toGamerProfile(profile), nil
 }
 
 func (r *GamerProfileRepository) Upsert(ctx context.Context, profile *models.GamerProfile) (*models.GamerProfile, error) {
@@ -133,4 +117,30 @@ func (r *GamerProfileRepository) CheckMembershipValidity(ctx context.Context, st
 	}
 
 	return tier, expiryDate, nil
+}
+
+func toGamerProfile(row sqlc.GetStudentRow) *models.GamerProfile {
+	profile := &models.GamerProfile{
+		StudentNumber:  row.StudentNumber,
+		FirstName:      row.FirstName,
+		LastName:       row.LastName,
+		MembershipTier: int(row.MembershipTier),
+	}
+	if row.ID.Valid {
+		profile.ID = row.ID.UUID.String()
+	}
+	if row.Banned.Valid {
+		profile.Banned = &row.Banned.Bool
+	}
+	if row.Notes.Valid {
+		profile.Notes = &row.Notes.String
+	}
+	if row.CreatedAt.Valid {
+		profile.CreatedAt = row.CreatedAt.Time
+	}
+	if row.MembershipExpiryDate.Valid {
+		profile.MembershipExpiryDate = &row.MembershipExpiryDate.Time
+	}
+
+	return profile
 }

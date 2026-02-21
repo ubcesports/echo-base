@@ -1,0 +1,14 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "internal/database/queries"
+    schema: "migrations"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/database/sqlc"
+        sql_package: "database/sql"
+    database:
+      uri: "postgresql://user:pass@localhost:5432/echobase?sslmode=disable"
+    rules:
+      - sqlc/db-prepare
