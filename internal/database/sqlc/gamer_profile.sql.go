@@ -8,22 +8,80 @@ package sqlc
 import (
 	"context"
 	"database/sql"
-
-	"github.com/google/uuid"
 )
 
-const getStudent = `-- name: GetStudent :one
-SELECT id, student_number, first_name, last_name, membership_tier,
-       banned, notes, created_at, membership_expiry_date
+const checkMembershipValidity = `-- name: CheckMembershipValidity :one
+SELECT membership_tier, membership_expiry_date
 FROM gamer_profile
 WHERE student_number = $1
 `
 
-type GetStudentRow struct {
-	ID                   uuid.NullUUID
-	StudentNumber        string
+type CheckMembershipValidityRow struct {
+	MembershipTier       int32
+	MembershipExpiryDate sql.NullTime
+}
+
+func (q *Queries) CheckMembershipValidity(ctx context.Context, studentNumber string) (CheckMembershipValidityRow, error) {
+	row := q.db.QueryRowContext(ctx, checkMembershipValidity, studentNumber)
+	var i CheckMembershipValidityRow
+	err := row.Scan(&i.MembershipTier, &i.MembershipExpiryDate)
+	return i, err
+}
+
+const deleteGamerProfile = `-- name: DeleteGamerProfile :execrows
+DELETE FROM gamer_profile WHERE student_number = $1
+`
+
+func (q *Queries) DeleteGamerProfile(ctx context.Context, studentNumber string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteGamerProfile, studentNumber)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const getGamerProfile = `-- name: GetGamerProfile :one
+SELECT first_name, last_name, student_number, membership_tier, banned, notes, created_at, id, membership_expiry_date
+FROM gamer_profile
+WHERE student_number = $1
+`
+
+func (q *Queries) GetGamerProfile(ctx context.Context, studentNumber string) (GamerProfile, error) {
+	row := q.db.QueryRowContext(ctx, getGamerProfile, studentNumber)
+	var i GamerProfile
+	err := row.Scan(
+		&i.FirstName,
+		&i.LastName,
+		&i.StudentNumber,
+		&i.MembershipTier,
+		&i.Banned,
+		&i.Notes,
+		&i.CreatedAt,
+		&i.ID,
+		&i.MembershipExpiryDate,
+	)
+	return i, err
+}
+
+const upsertGamerProfile = `-- name: UpsertGamerProfile :one
+INSERT INTO gamer_profile (first_name, last_name, student_number, membership_tier, banned, notes, created_at, membership_expiry_date)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (student_number)
+DO UPDATE SET
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    membership_tier = EXCLUDED.membership_tier,
+    banned = EXCLUDED.banned,
+    notes = EXCLUDED.notes,
+    created_at = EXCLUDED.created_at,
+    membership_expiry_date = EXCLUDED.membership_expiry_date
+RETURNING first_name, last_name, student_number, membership_tier, banned, notes, created_at, id, membership_expiry_date
+`
+
+type UpsertGamerProfileParams struct {
 	FirstName            string
 	LastName             string
+	StudentNumber        string
 	MembershipTier       int32
 	Banned               sql.NullBool
 	Notes                sql.NullString
@@ -31,18 +89,27 @@ type GetStudentRow struct {
 	MembershipExpiryDate sql.NullTime
 }
 
-func (q *Queries) GetStudent(ctx context.Context, studentNumber string) (GetStudentRow, error) {
-	row := q.db.QueryRowContext(ctx, getStudent, studentNumber)
-	var i GetStudentRow
+func (q *Queries) UpsertGamerProfile(ctx context.Context, arg UpsertGamerProfileParams) (GamerProfile, error) {
+	row := q.db.QueryRowContext(ctx, upsertGamerProfile,
+		arg.FirstName,
+		arg.LastName,
+		arg.StudentNumber,
+		arg.MembershipTier,
+		arg.Banned,
+		arg.Notes,
+		arg.CreatedAt,
+		arg.MembershipExpiryDate,
+	)
+	var i GamerProfile
 	err := row.Scan(
-		&i.ID,
-		&i.StudentNumber,
 		&i.FirstName,
 		&i.LastName,
+		&i.StudentNumber,
 		&i.MembershipTier,
 		&i.Banned,
 		&i.Notes,
 		&i.CreatedAt,
+		&i.ID,
 		&i.MembershipExpiryDate,
 	)
 	return i, err
