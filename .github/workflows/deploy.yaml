@@ -39,8 +39,8 @@ jobs:
           REPOSITORY: ubcea/echo-base
           TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$TAG .
-          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$TAG
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$TAG -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:latest .
+          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY --all-tags
 
   deploy:
     name: Deploy to EC2
