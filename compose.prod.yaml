@@ -1,0 +1,9 @@
+services:
+  echo-base:
+    image: public.ecr.aws/d0w1o5s2/ubcea/echo-base:latest
+    ports:
+      - 8080:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
