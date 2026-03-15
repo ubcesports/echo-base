@@ -84,7 +84,7 @@ jobs:
             --parameters 'commands=[
               "cd /home/ubuntu/echo-base",
               "export $(cat .env.deploy | xargs)",
-              "sql-migrate status -env=production"
+              "/home/ubuntu/go/bin/sql-migrate status -env=production"
             ]' \
             --comment "Decision gate" \
             --query "Command.CommandId" \
@@ -107,7 +107,7 @@ jobs:
           fi
 
   sync-migrations:
-    name: Sync migrations
+    name: Sync Migrations
     needs: 
       - decision-gate
     runs-on: ubuntu-latest
@@ -151,7 +151,7 @@ jobs:
           fi
 
   sync-images:
-    name: Sync images
+    name: Sync Images
     needs: 
       - decision-gate
     runs-on: ubuntu-latest
@@ -195,7 +195,7 @@ jobs:
           fi
 
   stop-application:
-    name: Stop application
+    name: Stop Application
     needs: 
       - decision-gate
     runs-on: ubuntu-latest
@@ -239,7 +239,7 @@ jobs:
           fi
 
   migrate-database:
-    name: Migrate database
+    name: Migrate Database
     needs: 
       - sync-migrations
       - stop-application
@@ -261,7 +261,7 @@ jobs:
             --parameters 'commands=[
               "cd /home/ubuntu/echo-base",
               "export $(cat .env.deploy | xargs)",
-              "sql-migrate up -env=production"
+              "/home/ubuntu/go/bin/sql-migrate up -env=production"
             ]' \
             --comment "Migrate database" \
             --query "Command.CommandId" \
@@ -284,7 +284,7 @@ jobs:
           fi
 
   build-application:
-    name: Build application
+    name: Build Application
     needs: 
       - sync-images
       - stop-application
