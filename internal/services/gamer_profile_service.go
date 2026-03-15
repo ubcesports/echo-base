@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/ubcesports/echo-base/internal/errors"
 	"github.com/ubcesports/echo-base/internal/interfaces/gamer"
 	"github.com/ubcesports/echo-base/internal/models"
-	"github.com/ubcesports/echo-base/internal/utils"
 )
 
 var studentNumberRegex = regexp.MustCompile(`^\d{8}$`)
@@ -52,11 +52,6 @@ func (s *gamerProfileService) CreateOrUpdateProfile(ctx context.Context, req *mo
 		return nil, fmt.Errorf("failed to calculate expiry date: %w", err)
 	}
 
-	createdAt, err := utils.NowInPacific()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current time: %w", err)
-	}
-
 	profile := &models.GamerProfile{
 		StudentNumber:        req.StudentNumber,
 		FirstName:            req.FirstName,
@@ -64,7 +59,7 @@ func (s *gamerProfileService) CreateOrUpdateProfile(ctx context.Context, req *mo
 		MembershipTier:       req.MembershipTier,
 		Banned:               req.Banned,
 		Notes:                req.Notes,
-		CreatedAt:            createdAt,
+		CreatedAt:            time.Now(),
 		MembershipExpiryDate: expiryDate,
 	}
 
