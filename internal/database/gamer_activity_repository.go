@@ -245,13 +245,14 @@ func toGamerActivitiesFromActiveSessions(rows []sqlc.GetActiveSessionsRow) []mod
 	activities := make([]models.GamerActivity, len(rows))
 	for i, row := range rows {
 		activities[i] = models.GamerActivity{
-			ID:            row.ID.String(),
-			StudentNumber: row.StudentNumber,
-			PCNumber:      int(row.PcNumber.Int32),
-			Game:          row.Game.String,
-			StartedAt:     row.StartedAt.Time,
-			FirstName:     &row.FirstName,
-			LastName:      &row.LastName,
+			ID:             row.ID.String(),
+			StudentNumber:  row.StudentNumber,
+			PCNumber:       int(row.PcNumber.Int32),
+			Game:           row.Game.String,
+			MembershipTier: int(row.MembershipTier),
+			StartedAt:      row.StartedAt.Time,
+			FirstName:      &row.FirstName,
+			LastName:       &row.LastName,
 		}
 		if row.EndedAt.Valid {
 			activities[i].EndedAt = &row.EndedAt.Time

@@ -59,22 +59,23 @@ func (q *Queries) CreateGamerActivity(ctx context.Context, arg CreateGamerActivi
 
 const getActiveSessions = `-- name: GetActiveSessions :many
 SELECT ga.id, ga.student_number, ga.pc_number, ga.game, ga.started_at, ga.ended_at, ga.exec_name,
-       gp.first_name, gp.last_name
+       gp.first_name, gp.last_name, gp.membership_tier
 FROM gamer_activity ga
 JOIN gamer_profile gp ON ga.student_number = gp.student_number
 WHERE ga.ended_at IS NULL
 `
 
 type GetActiveSessionsRow struct {
-	ID            uuid.UUID
-	StudentNumber string
-	PcNumber      sql.NullInt32
-	Game          sql.NullString
-	StartedAt     sql.NullTime
-	EndedAt       sql.NullTime
-	ExecName      sql.NullString
-	FirstName     string
-	LastName      string
+	ID             uuid.UUID
+	StudentNumber  string
+	PcNumber       sql.NullInt32
+	Game           sql.NullString
+	StartedAt      sql.NullTime
+	EndedAt        sql.NullTime
+	ExecName       sql.NullString
+	FirstName      string
+	LastName       string
+	MembershipTier int32
 }
 
 func (q *Queries) GetActiveSessions(ctx context.Context) ([]GetActiveSessionsRow, error) {
@@ -96,6 +97,7 @@ func (q *Queries) GetActiveSessions(ctx context.Context) ([]GetActiveSessionsRow
 			&i.ExecName,
 			&i.FirstName,
 			&i.LastName,
+			&i.MembershipTier,
 		); err != nil {
 			return nil, err
 		}
