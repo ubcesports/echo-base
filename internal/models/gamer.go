@@ -15,15 +15,16 @@ type GamerProfile struct {
 }
 
 type GamerActivity struct {
-	ID            string     `json:"id"`
-	StudentNumber string     `json:"student_number"`
-	PCNumber      int        `json:"pc_number"`
-	Game          string     `json:"game"`
-	StartedAt     time.Time  `json:"started_at"`
-	EndedAt       *time.Time `json:"ended_at,omitempty"`
-	ExecName      *string    `json:"exec_name,omitempty"`
-	FirstName     *string    `json:"first_name,omitempty"`
-	LastName      *string    `json:"last_name,omitempty"`
+	ID             string     `json:"id"`
+	StudentNumber  string     `json:"student_number"`
+	PCNumber       int        `json:"pc_number"`
+	Game           string     `json:"game"`
+	MembershipTier int        `json:"membership_tier"`
+	StartedAt      time.Time  `json:"started_at"`
+	EndedAt        *time.Time `json:"ended_at,omitempty"`
+	ExecName       *string    `json:"exec_name,omitempty"`
+	FirstName      *string    `json:"first_name,omitempty"`
+	LastName       *string    `json:"last_name,omitempty"`
 }
 
 type CreateGamerProfileRequest struct {
