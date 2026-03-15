@@ -3,11 +3,11 @@ package services
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ubcesports/echo-base/internal/errors"
 	"github.com/ubcesports/echo-base/internal/interfaces/gamer"
 	"github.com/ubcesports/echo-base/internal/models"
-	"github.com/ubcesports/echo-base/internal/utils"
 )
 
 type gamerActivityService struct {
@@ -82,16 +82,11 @@ func (s *gamerActivityService) StartActivity(ctx context.Context, req *models.Cr
 		return nil, errors.NewForbiddenError(fmt.Sprintf("%s membership expired on %s. Please ask the user to purchase a new membership. If the member has already purchased a new membership for this year please verify via Showpass then create a new profile for them.", tier.GetName(), expiryDateStr))
 	}
 
-	startedAt, err := utils.NowInPacific()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current time: %w", err)
-	}
-
 	activity := &models.GamerActivity{
 		StudentNumber: req.StudentNumber,
 		PCNumber:      req.PCNumber,
 		Game:          req.Game,
-		StartedAt:     startedAt,
+		StartedAt:     time.Now(),
 	}
 
 	return s.activityRepo.Create(ctx, activity)
@@ -106,12 +101,7 @@ func (s *gamerActivityService) EndActivity(ctx context.Context, studentNumber st
 		return nil, errors.NewValidationError("exec_name", "is required")
 	}
 
-	endedAt, err := utils.NowInPacific()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current time: %w", err)
-	}
-
-	return s.activityRepo.UpdateEndTime(ctx, studentNumber, req.PCNumber, endedAt, req.ExecName)
+	return s.activityRepo.UpdateEndTime(ctx, studentNumber, req.PCNumber, time.Now(), req.ExecName)
 }
 
 func (s *gamerActivityService) GetActiveSessions(ctx context.Context) ([]models.GamerActivity, error) {
