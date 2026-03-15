@@ -3,16 +3,14 @@ package models
 import (
 	"testing"
 	"time"
-
-	"github.com/ubcesports/echo-base/internal/utils"
 )
 
 func TestNewMembershipTier(t *testing.T) {
 	tests := []struct {
-		name        string
-		tierNumber  int
-		wantName    string
-		wantErr     bool
+		name       string
+		tierNumber int
+		wantName   string
+		wantErr    bool
 	}{
 		{"Tier 0", 0, "No Membership", false},
 		{"Tier 1", 1, "Tier 1", false},
@@ -81,12 +79,7 @@ func TestTierDailyLimits(t *testing.T) {
 }
 
 func TestTierExpiryDates(t *testing.T) {
-	loc, err := utils.GetPacificLocation()
-	if err != nil {
-		t.Fatalf("GetPacificLocation() error = %v", err)
-	}
-
-	now := time.Now().In(loc)
+	now := time.Now()
 	currentYear := now.Year()
 	expectedYear := currentYear
 	if now.Month() >= time.May {
@@ -135,19 +128,14 @@ func TestTierExpiryDates(t *testing.T) {
 }
 
 func TestTierIsExpired(t *testing.T) {
-	loc, err := utils.GetPacificLocation()
-	if err != nil {
-		t.Fatalf("GetPacificLocation() error = %v", err)
-	}
-
-	yesterday := time.Now().In(loc).AddDate(0, 0, -1)
-	tomorrow := time.Now().In(loc).AddDate(0, 0, 1)
-	lastYear := time.Now().In(loc).AddDate(-1, 0, 0)
+	yesterday := time.Now().AddDate(0, 0, -1)
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	lastYear := time.Now().AddDate(-1, 0, 0)
 
 	tests := []struct {
-		name       string
-		tierNumber int
-		expiryDate *time.Time
+		name        string
+		tierNumber  int
+		expiryDate  *time.Time
 		wantExpired bool
 	}{
 		{"Tier 0 with nil expiry", 0, nil, false},
@@ -178,13 +166,8 @@ func TestTierIsExpired(t *testing.T) {
 }
 
 func TestTierExpiryBoundary(t *testing.T) {
-	loc, err := utils.GetPacificLocation()
-	if err != nil {
-		t.Fatalf("GetPacificLocation() error = %v", err)
-	}
-
-	today := time.Now().In(loc)
-	todayStart := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, loc)
+	today := time.Now()
+	todayStart := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
 
 	tier, err := NewMembershipTier(1)
 	if err != nil {
