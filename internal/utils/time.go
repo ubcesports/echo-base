@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// GetNextMayFirst calculates the next May 1st in Pacific timezone
+// GetNextMayFirst calculates the next May 1st
 // If current month >= May, returns May 1st of next year
 // Otherwise returns May 1st of current year
 // This is because when memberships are created they expire on the
@@ -21,7 +21,7 @@ func GetNextMayFirst() (*time.Time, error) {
 	return &expiry, nil
 }
 
-// IsDateExpired compares expiryDate with today at day granularity in Pacific timezone
+// IsDateExpired compares expiryDate with today
 // Returns true if today is after the expiry date, false if not expired or expiryDate is nil
 func IsDateExpired(expiryDate *time.Time) (bool, error) {
 	if expiryDate == nil {
