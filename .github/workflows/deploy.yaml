@@ -42,8 +42,8 @@ jobs:
           docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$TAG -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:latest .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY --all-tags
 
-  sync-migrations:
-    name: Sync Migrations
+  sync-bootstrap:
+    name: Sync Bootstrap Files
     needs: test
     runs-on: ubuntu-latest
 
@@ -58,32 +58,347 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Sync dbconfig.yml and migrations
+      - name: Sync bootstrap files and migrations
         run: aws s3 sync . s3://echo-base/${{ github.sha }}/ --exclude '*' --include "compose.prod.yaml" --include "dbconfig.yml" --include "migrations/*"
-
-      - name: Sync migrations
-        run: aws s3 sync ./migrations s3://echo-base/${{ github.sha }}/migrations --delete
 
   decision-gate:
     name: Decision Gate
     needs: 
       - build-and-push
-      - sync-migrations
+      - sync-bootstrap
     runs-on: ubuntu-latest
 
     steps:
-      - name: Pass
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Check migration status
         run: |
-          echo "decision gate passed"
-          exit 0
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "sql-migrate status -env=production"
+            ]' \
+            --comment "Decision gate" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Decision gate failed with status: $STATUS"
+            exit 1
+          fi
+
+  sync-migrations:
+    name: Sync migrations
+    needs: 
+      - decision-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Sync migration files
+        run: |
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "aws s3 sync s3://echo-base/${{ github.sha }} ."
+            ]' \
+            --comment "Sync migrations" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Migration sync failed with status: $STATUS"
+            exit 1
+          fi
+
+  sync-images:
+    name: Sync images
+    needs: 
+      - decision-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Sync images
+        run: |
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "docker compose --file compose.prod.yaml pull"
+            ]' \
+            --comment "Sync images" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Image sync failed with status: $STATUS"
+            exit 1
+          fi
+
+  stop-application:
+    name: Stop application
+    needs: 
+      - decision-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Shut down application
+        run: |
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "docker compose --file compose.prod.yaml down"
+            ]' \
+            --comment "Stop application" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Application shutdown failed with status: $STATUS"
+            exit 1
+          fi
+
+  migrate-database:
+    name: Migrate database
+    needs: 
+      - sync-migrations
+      - stop-application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Sync migration files
+        run: |
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "sql-migrate up -env=production"
+            ]' \
+            --comment "Migrate database" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Databse migrate failed with status: $STATUS"
+            exit 1
+          fi
+
+  build-application:
+    name: Build application
+    needs: 
+      - sync-images
+      - stop-application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Build application
+        run: |
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "docker compose --file compose.prod.yaml build"
+            ]' \
+            --comment "Build application" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Application build failed with status: $STATUS"
+            exit 1
+          fi
 
   deploy:
     name: Deploy to EC2
-    needs: decision-gate
+    needs:
+      - build-application
+      - migrate-database
     runs-on: ubuntu-latest
 
     steps:
-      - name: Stub
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: Deploy application
         run: |
-          echo "not implemented"
-          exit 1
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "docker compose --file compose.prod.yaml up -d"
+            ]' \
+            --comment "Deploy application" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Application deploy failed with status: $STATUS"
+            exit 1
+          fi
+
+      - name: Healthcheck
+        run: |
+          command_id=$(aws ssm send-command \
+            --instance-ids ${{ secrets.AWS_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ubuntu/echo-base",
+              "export $(cat .env.deploy | xargs)",
+              "curl -v http://127.0.0.1:8080"
+            ]' \
+            --comment "Deploy application" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id $command_id \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} || true
+
+          STATUS=$(aws ssm list-command-invocations \
+            --instance-id ${{ secrets.AWS_INSTANCE_ID }} \
+            --command-id $command_id \
+            --details \
+            --query "CommandInvocations[0].Status" \
+            --output text)
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Application deploy failed with status: $STATUS"
+            exit 1
+          fi
