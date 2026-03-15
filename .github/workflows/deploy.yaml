@@ -59,7 +59,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Sync dbconfig.yml and migrations
-        run: aws s3 sync . s3://echo-base/${{ github.sha }}/ --exclude '*' --include "dbconfig.yml" --include "migrations/*"
+        run: aws s3 sync . s3://echo-base/${{ github.sha }}/ --exclude '*' --include "compose.prod.yaml" --include "dbconfig.yml" --include "migrations/*"
 
       - name: Sync migrations
         run: aws s3 sync ./migrations s3://echo-base/${{ github.sha }}/migrations --delete
