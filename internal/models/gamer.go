@@ -27,6 +27,11 @@ type GamerActivity struct {
 	LastName       *string    `json:"last_name,omitempty"`
 }
 
+type ExecLeaderboardEntry struct {
+	ExecName     string `json:"exec_name"`
+	SignoutCount int    `json:"signout_count"`
+}
+
 type CreateGamerProfileRequest struct {
 	FirstName      string  `json:"first_name"`
 	LastName       string  `json:"last_name"`

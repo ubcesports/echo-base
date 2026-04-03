@@ -10,7 +10,10 @@ import (
 )
 
 type mockGamerActivityRepository struct {
-	activities []models.GamerActivity
+	activities           []models.GamerActivity
+	leaderboard          []models.ExecLeaderboardEntry
+	lastLeaderboardStart time.Time
+	lastLeaderboardEnd   time.Time
 }
 
 func (m *mockGamerActivityRepository) GetByStudentNumber(ctx context.Context, studentNumber string) ([]models.GamerActivity, error) {
@@ -35,6 +38,12 @@ func (m *mockGamerActivityRepository) GetTodayActivitiesByStudent(ctx context.Co
 
 func (m *mockGamerActivityRepository) GetRecentActivities(ctx context.Context, page, limit int, search string) ([]models.GamerActivity, error) {
 	return m.activities, nil
+}
+
+func (m *mockGamerActivityRepository) GetExecLeaderboard(ctx context.Context, windowStart, windowEnd time.Time) ([]models.ExecLeaderboardEntry, error) {
+	m.lastLeaderboardStart = windowStart
+	m.lastLeaderboardEnd = windowEnd
+	return m.leaderboard, nil
 }
 
 func (m *mockGamerActivityRepository) Create(ctx context.Context, activity *models.GamerActivity) (*models.GamerActivity, error) {
@@ -264,6 +273,46 @@ func TestEndActivity(t *testing.T) {
 			_, err := service.EndActivity(context.Background(), tt.studentNumber, tt.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("EndActivity() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGetMembershipYearWindow(t *testing.T) {
+	tests := []struct {
+		name      string
+		now       time.Time
+		wantStart time.Time
+		wantEnd   time.Time
+	}{
+		{
+			name:      "before may first",
+			now:       time.Date(2026, time.April, 3, 12, 0, 0, 0, time.UTC),
+			wantStart: time.Date(2025, time.May, 1, 0, 0, 0, 0, time.UTC),
+			wantEnd:   time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:      "on may first",
+			now:       time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC),
+			wantStart: time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC),
+			wantEnd:   time.Date(2027, time.May, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:      "after may first",
+			now:       time.Date(2026, time.December, 25, 12, 0, 0, 0, time.UTC),
+			wantStart: time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC),
+			wantEnd:   time.Date(2027, time.May, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotStart, gotEnd := getMembershipYearWindow(tt.now)
+			if !gotStart.Equal(tt.wantStart) {
+				t.Errorf("start = %v, want %v", gotStart, tt.wantStart)
+			}
+			if !gotEnd.Equal(tt.wantEnd) {
+				t.Errorf("end = %v, want %v", gotEnd, tt.wantEnd)
 			}
 		})
 	}

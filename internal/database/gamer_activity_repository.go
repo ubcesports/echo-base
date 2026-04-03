@@ -64,6 +64,27 @@ func (r *GamerActivityRepository) GetRecentActivities(ctx context.Context, page,
 	return toGamerActivitiesWithName(rows), nil
 }
 
+func (r *GamerActivityRepository) GetExecLeaderboard(ctx context.Context, windowStart, windowEnd time.Time) ([]models.ExecLeaderboardEntry, error) {
+	queries := sqlc.New(r.db)
+	rows, err := queries.GetExecLeaderboard(ctx, sqlc.GetExecLeaderboardParams{
+		EndedAt:   sql.NullTime{Time: windowStart, Valid: true},
+		EndedAt_2: sql.NullTime{Time: windowEnd, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query exec leaderboard: %w", err)
+	}
+
+	leaderboard := make([]models.ExecLeaderboardEntry, len(rows))
+	for i, row := range rows {
+		leaderboard[i] = models.ExecLeaderboardEntry{
+			ExecName:     row.ExecName.String,
+			SignoutCount: int(row.SignoutCount),
+		}
+	}
+
+	return leaderboard, nil
+}
+
 func (r *GamerActivityRepository) Create(ctx context.Context, activity *models.GamerActivity) (*models.GamerActivity, error) {
 	var activityID uuid.UUID
 	var err error

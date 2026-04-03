@@ -50,6 +50,11 @@ func (s *gamerActivityService) GetRecentActivities(ctx context.Context, page, li
 	return s.activityRepo.GetRecentActivities(ctx, page, limit, search)
 }
 
+func (s *gamerActivityService) GetExecLeaderboard(ctx context.Context) ([]models.ExecLeaderboardEntry, error) {
+	windowStart, windowEnd := getMembershipYearWindow(time.Now().UTC())
+	return s.activityRepo.GetExecLeaderboard(ctx, windowStart, windowEnd)
+}
+
 func (s *gamerActivityService) StartActivity(ctx context.Context, req *models.CreateActivityRequest) (*models.GamerActivity, error) {
 	if err := validateStudentNumber(req.StudentNumber); err != nil {
 		return nil, err
@@ -106,4 +111,15 @@ func (s *gamerActivityService) EndActivity(ctx context.Context, studentNumber st
 
 func (s *gamerActivityService) GetActiveSessions(ctx context.Context) ([]models.GamerActivity, error) {
 	return s.activityRepo.GetActiveSessions(ctx)
+}
+
+func getMembershipYearWindow(now time.Time) (time.Time, time.Time) {
+	year := now.Year()
+	currentMayFirst := time.Date(year, time.May, 1, 0, 0, 0, 0, time.UTC)
+
+	if now.Before(currentMayFirst) {
+		return currentMayFirst.AddDate(-1, 0, 0), currentMayFirst
+	}
+
+	return currentMayFirst, currentMayFirst.AddDate(1, 0, 0)
 }

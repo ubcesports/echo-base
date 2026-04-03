@@ -112,6 +112,50 @@ func (q *Queries) GetActiveSessions(ctx context.Context) ([]GetActiveSessionsRow
 	return items, nil
 }
 
+const getExecLeaderboard = `-- name: GetExecLeaderboard :many
+SELECT exec_name, COUNT(*)::BIGINT AS signout_count
+FROM gamer_activity
+WHERE ended_at IS NOT NULL
+AND exec_name IS NOT NULL
+AND ended_at >= $1
+AND ended_at < $2
+GROUP BY exec_name
+ORDER BY signout_count DESC, exec_name ASC
+`
+
+type GetExecLeaderboardParams struct {
+	EndedAt   sql.NullTime
+	EndedAt_2 sql.NullTime
+}
+
+type GetExecLeaderboardRow struct {
+	ExecName     sql.NullString
+	SignoutCount int64
+}
+
+func (q *Queries) GetExecLeaderboard(ctx context.Context, arg GetExecLeaderboardParams) ([]GetExecLeaderboardRow, error) {
+	rows, err := q.db.QueryContext(ctx, getExecLeaderboard, arg.EndedAt, arg.EndedAt_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetExecLeaderboardRow
+	for rows.Next() {
+		var i GetExecLeaderboardRow
+		if err := rows.Scan(&i.ExecName, &i.SignoutCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getGamerActivity = `-- name: GetGamerActivity :many
 SELECT id, student_number, pc_number, game, started_at, ended_at, exec_name
 FROM gamer_activity

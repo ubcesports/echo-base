@@ -93,6 +93,81 @@ func TestGamerActivityEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("get exec leaderboard", func(t *testing.T) {
+		profileReq := models.CreateGamerProfileRequest{
+			StudentNumber:  "33333333",
+			FirstName:      "Bob",
+			LastName:       "Jones",
+			MembershipTier: 1,
+			Banned:         ptrBool(false),
+		}
+
+		rr := makeRequest(t, http.MethodPost, "/v1/api/gamer", profileReq)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("failed to create leaderboard test profile: %s", rr.Body.String())
+		}
+
+		req := models.CreateActivityRequest{
+			StudentNumber: "33333333",
+			PCNumber:      2,
+			Game:          "VALORANT",
+		}
+
+		rr = makeRequest(t, http.MethodPost, "/v1/api/activity", req)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("expected status %d, got %d: %s", http.StatusCreated, rr.Code, rr.Body.String())
+		}
+
+		endReq := models.UpdateActivityRequest{
+			PCNumber: 2,
+			ExecName: "TestExec",
+		}
+
+		rr = makeRequest(t, http.MethodPatch, "/v1/api/activity/update/33333333", endReq)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("expected status %d, got %d: %s", http.StatusCreated, rr.Code, rr.Body.String())
+		}
+
+		req = models.CreateActivityRequest{
+			StudentNumber: "33333333",
+			PCNumber:      3,
+			Game:          "Rocket League",
+		}
+
+		rr = makeRequest(t, http.MethodPost, "/v1/api/activity", req)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("expected status %d, got %d: %s", http.StatusCreated, rr.Code, rr.Body.String())
+		}
+
+		endReq = models.UpdateActivityRequest{
+			PCNumber: 3,
+			ExecName: "AnotherExec",
+		}
+
+		rr = makeRequest(t, http.MethodPatch, "/v1/api/activity/update/33333333", endReq)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("expected status %d, got %d: %s", http.StatusCreated, rr.Code, rr.Body.String())
+		}
+
+		rr = makeRequest(t, http.MethodGet, "/v1/api/activity/all/leaderboard", nil)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+		}
+
+		var leaderboard []models.ExecLeaderboardEntry
+		if err := json.NewDecoder(rr.Body).Decode(&leaderboard); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if len(leaderboard) < 2 {
+			t.Fatalf("expected at least 2 leaderboard entries, got %d", len(leaderboard))
+		}
+
+		if leaderboard[0].ExecName != "TestExec" || leaderboard[0].SignoutCount < 2 {
+			t.Errorf("expected top leaderboard entry to be TestExec with count >= 2, got %+v", leaderboard[0])
+		}
+	})
+
 	t.Run("get activities by student", func(t *testing.T) {
 		rr := makeRequest(t, http.MethodGet, "/v1/api/activity/22222222", nil)
 
@@ -126,8 +201,16 @@ func TestGamerActivityEndpoints(t *testing.T) {
 			t.Error("expected at least one activity")
 		}
 
-		if activities[0].FirstName == nil || *activities[0].FirstName != "Alice" {
-			t.Error("expected first_name to be included from JOIN")
+		foundAlice := false
+		for _, activity := range activities {
+			if activity.FirstName != nil && *activity.FirstName == "Alice" {
+				foundAlice = true
+				break
+			}
+		}
+
+		if !foundAlice {
+			t.Error("expected first_name Alice to be included from JOIN")
 		}
 	})
 

@@ -217,3 +217,22 @@ func GetActiveSessions(service services.GamerActivityService) http.Handler {
 		json.NewEncoder(w).Encode(activities)
 	})
 }
+
+func GetExecLeaderboard(service services.GamerActivityService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		leaderboard, err := service.GetExecLeaderboard(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(leaderboard)
+	})
+}

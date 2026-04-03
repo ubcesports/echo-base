@@ -27,4 +27,5 @@ func AddRoutes(
 	mux.Handle("POST /v1/api/activity", handlers.StartActivity(gamerActivityService))
 	mux.Handle("PATCH /v1/api/activity/update/{student_number}", handlers.EndActivity(gamerActivityService))
 	mux.Handle("GET /v1/api/activity/all/get-active-pcs", handlers.GetActiveSessions(gamerActivityService))
+	mux.Handle("GET /v1/api/activity/all/leaderboard", handlers.GetExecLeaderboard(gamerActivityService))
 }

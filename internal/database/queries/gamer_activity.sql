@@ -52,3 +52,13 @@ SELECT ga.id, ga.student_number, ga.pc_number, ga.game, ga.started_at, ga.ended_
 FROM gamer_activity ga
 JOIN gamer_profile gp ON ga.student_number = gp.student_number
 WHERE ga.ended_at IS NULL;
+
+-- name: GetExecLeaderboard :many
+SELECT exec_name, COUNT(*)::BIGINT AS signout_count
+FROM gamer_activity
+WHERE ended_at IS NOT NULL
+AND exec_name IS NOT NULL
+AND ended_at >= $1
+AND ended_at < $2
+GROUP BY exec_name
+ORDER BY signout_count DESC, exec_name ASC;
